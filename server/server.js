@@ -9,21 +9,6 @@ const io = require("socket.io")(http, {
 
 const Deck = require("./lib/deck");
 
-/* import server from "express";
-import httpServer from "http";
-import { Server as SocketIO } from "socket.io";
-
-const app = server();
-const http = httpServer.createServer(app);
-const io = new SocketIO(http, {
-  cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"],
-  },
-});
-
-import Deck from "./lib/deck.js"; */
-
 let players = [];
 let deck;
 let currentPlayer = 0;
@@ -47,12 +32,17 @@ io.on("connection", function (socket) {
     }
   });
 
-  socket.on("startGame", function (players) {
+  socket.on("startGame", function () {
     // TODO: increase the number of packs depending on the number of players
     deck = new Deck(2);
     deck.shuffle();
     let discard = deck.deal(1);
     let sockets = io.of("/").sockets;
+    // shuffle them players
+    for (let i = players.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [players[i], players[j]] = [players[j], players[i]];
+    }
     players.forEach((player) => {
       if (sockets.has(player.socketId)) {
         sockets
@@ -63,6 +53,7 @@ io.on("connection", function (socket) {
       }
     });
     io.sockets.emit("setPlayers", players);
+    io.sockets.emit("setCurrentPlayer", players[0].username);
   });
 
   socket.on("getDeckCard", function () {
