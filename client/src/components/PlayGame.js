@@ -7,6 +7,10 @@ import Cards from "./Cards";
 import Deck from "./Deck";
 
 function PlayGame(props) {
+  let selectedCards = props.cards.filter((card) => card.selected);
+  let buttonsDisabled = !(
+    props.currentPlayer === props.username && props.hasSelectedCard
+  );
   return (
     <>
       <Col>
@@ -21,7 +25,19 @@ function PlayGame(props) {
             </Row>
           </Col>
           <Col>
-            <Players players={props.players} />
+            <Button
+              variant="primary"
+              disabled={buttonsDisabled || selectedCards.length !== 1}
+              onClick={props.handleCardDiscard}
+            >
+              Discard
+            </Button>
+          </Col>
+          <Col>
+            <Players
+              players={props.players}
+              currentPlayer={props.currentPlayer}
+            />
           </Col>
         </Row>
         <Row
@@ -42,7 +58,11 @@ function PlayGame(props) {
           </Button>
         </Row>
         <Row>
-          <Cards cards={props.cards} handleMoveCard={props.handleMoveCard} />
+          <Cards
+            cards={props.cards}
+            handleMoveCard={props.handleMoveCard}
+            handleClickedCard={props.handleClickedCard}
+          />
         </Row>
       </Col>
     </>

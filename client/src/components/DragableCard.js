@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { useDrag, useDrop } from "react-dnd";
 
-import { ItemTypes } from "./Constants";
+import { ItemTypes } from "../Constants";
 import Card from "./Card";
 
 function DragableCard(props) {
@@ -57,6 +57,7 @@ function DragableCard(props) {
         width: "1em",
         opacity: opacity,
       }}
+      onClick={props.clickCard}
     >
       <Card card={props.card} />
     </div>

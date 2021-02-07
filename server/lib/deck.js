@@ -41,7 +41,7 @@ module.exports = class Deck {
       "K",
     ];
     return ranks
-      .map((r) => suits.map((s) => ({ rank: r, suit: s })))
+      .map((r) => suits.map((s) => ({ rank: r, suit: s, selected: false })))
       .reduce((prev, curr) => prev.concat(curr));
   }
 };
