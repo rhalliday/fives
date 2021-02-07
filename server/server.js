@@ -51,14 +51,26 @@ io.on("connection", function (socket) {
     // TODO: increase the number of packs depending on the number of players
     deck = new Deck(4);
     deck.shuffle();
+    discard = deck.deal(1);
     let sockets = io.of("/").sockets;
     players.forEach((player) => {
       if (sockets.has(player.socketId)) {
-        sockets.get(player.socketId).emit("dealtCards", deck.deal(13));
+        sockets
+          .get(player.socketId)
+          .emit("dealtCards", [deck.deal(13), discard]);
       } else {
         console.log("Could not find socket " + player.socketId);
       }
     });
+    io.sockets.emit("setPlayers", players);
+  });
+
+  socket.on("getDeckCard", function () {
+    socket.emit("setDeckCard", deck.deal(1));
+  });
+
+  socket.on("setDiscards", function (discards) {
+    io.sockets.emit("setDiscards", discards);
   });
 
   socket.on("disconnect", function () {
