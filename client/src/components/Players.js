@@ -9,7 +9,14 @@ function Players(props) {
       props.handleClickPlayer(player);
     };
     return (
-      <ListGroup.Item key={player.username} onClick={clickHandler}>
+      <ListGroup.Item
+        key={player.username}
+        onClick={clickHandler}
+        style={{
+          backgroundColor:
+            player.username === props.currentPlayer ? "#0f0" : "",
+        }}
+      >
         <PlayerDisplay player={player} />
       </ListGroup.Item>
     );

@@ -6,12 +6,17 @@ import DragableCard from "./DragableCard";
 
 function Cards(props) {
   let displayCards = props.cards.map((card, index) => {
+    let clickedCard = () => props.handleClickedCard(index);
     return (
-      <ListGroup.Item key={index} style={{ padding: "0" }}>
+      <ListGroup.Item
+        key={index}
+        style={{ padding: "0", marginTop: card.selected ? "0" : "2em" }}
+      >
         <DragableCard
           card={card}
           index={index}
           moveCard={props.handleMoveCard}
+          clickCard={clickedCard}
         />
       </ListGroup.Item>
     );

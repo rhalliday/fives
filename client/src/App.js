@@ -1,5 +1,4 @@
 import React from "react";
-import socketIOClient from "socket.io-client";
 
 import "./App.css";
 import DataEntry from "./components/DataEntry";
@@ -8,8 +7,7 @@ import PlayGame from "./components/PlayGame";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-
-const ENDPOINT = "http://localhost:8080";
+import { socket } from "./service/socket";
 
 class App extends React.Component {
   constructor(props) {
@@ -17,7 +15,6 @@ class App extends React.Component {
     this.state = {
       players: [],
       username: "",
-      socket: socketIOClient(ENDPOINT),
       cards: [],
       canStartGame: false,
       currentPlayer: "",
@@ -25,12 +22,20 @@ class App extends React.Component {
       currentRound: 0,
       discards: [],
     };
+    this.HandleSetUsername = this.HandleSetUsername.bind(this);
+    this.HandleUpdateUsername = this.HandleUpdateUsername.bind(this);
+    this.HandleStartGame = this.HandleStartGame.bind(this);
+    this.HandleMoveCard = this.HandleMoveCard.bind(this);
+    this.HandleDeckClick = this.HandleDeckClick.bind(this);
+    this.HandleDiscardClick = this.HandleDiscardClick.bind(this);
+    this.HandleCardDiscard = this.HandleCardDiscard.bind(this);
+    this.HandleClickedCard = this.HandleClickedCard.bind(this);
+  }
 
-    this.state.socket.on("userSet", (data) =>
-      this.setState({ username: data })
-    );
+  componentDidMount() {
+    socket.on("userSet", (data) => this.setState({ username: data }));
 
-    this.state.socket.on("setPlayers", (data) => {
+    socket.on("setPlayers", (data) => {
       let gamePlayers = data.filter((player) => player.username);
       let canStartGame = gamePlayers[0].username === this.state.username;
       this.setState({
@@ -40,28 +45,23 @@ class App extends React.Component {
       });
     });
 
-    this.state.socket.on("dealtCards", (cards) => {
-      console.log(cards);
+    socket.on("dealtCards", (cards) => {
       this.setState({ cards: cards[0], discards: cards[1] });
     });
 
-    this.state.socket.on("setDeckCard", (card) => {
+    socket.on("setDeckCard", (card) => {
       let cards = this.state.cards;
       cards.push(card[0]);
       this.setState({ cards: cards });
     });
 
-    this.state.socket.on("setDiscards", (discards) => {
-      console.log(discards);
+    socket.on("setDiscards", (discards) => {
       this.setState({ discards: discards });
     });
 
-    this.HandleSetUsername = this.HandleSetUsername.bind(this);
-    this.HandleUpdateUsername = this.HandleUpdateUsername.bind(this);
-    this.HandleStartGame = this.HandleStartGame.bind(this);
-    this.HandleMoveCard = this.HandleMoveCard.bind(this);
-    this.HandleDeckClick = this.HandleDeckClick.bind(this);
-    this.HandleDiscardClick = this.HandleDiscardClick.bind(this);
+    socket.on("setCurrentPlayer", (currentPlayer) => {
+      this.setState({ currentPlayer: currentPlayer });
+    });
   }
   canClickCard() {
     return (
@@ -73,7 +73,7 @@ class App extends React.Component {
     this.username = username;
   }
   HandleSetUsername() {
-    this.state.socket.emit("setUsername", this.username);
+    socket.emit("setUsername", this.username);
   }
   HandleStartGame() {
     let players = this.state.players;
@@ -82,7 +82,7 @@ class App extends React.Component {
       const j = Math.floor(Math.random() * (i + 1));
       [players[i], players[j]] = [players[j], players[i]];
     }
-    this.state.socket.emit("startGame", players);
+    socket.emit("startGame", players);
   }
   HandleMoveCard(dragIndex, hoverIndex) {
     let cards = this.state.cards;
@@ -92,8 +92,8 @@ class App extends React.Component {
   }
   HandleDeckClick() {
     if (!this.canClickCard()) return;
-    this.state.socket.emit("getDeckCard");
     this.setState({ hasSelectedCard: true });
+    socket.emit("getDeckCard");
   }
   HandleDiscardClick() {
     if (!this.canClickCard()) return;
@@ -101,7 +101,32 @@ class App extends React.Component {
     let cards = this.state.cards;
     cards.push(discards.pop());
     this.setState({ cards: cards, discards: discards, hasSelectedCard: true });
-    this.state.socket.emit("setDiscards", discards);
+    socket.emit("setDiscards", discards);
+  }
+  HandleClickedCard(cardIndex) {
+    let cards = this.state.cards;
+    cards[cardIndex].selected = !cards[cardIndex].selected;
+    this.setState({ cards: cards });
+  }
+  HandleCardDiscard() {
+    let cards = this.state.cards;
+    let discards = this.state.discards;
+    let discardIndex = cards.findIndex((card) => card.selected);
+    cards[discardIndex].selected = false;
+    discards.push(cards[discardIndex]);
+    cards.splice(discardIndex, 1);
+    this.setState({ cards: cards, discards: discards, hasSelectedCard: false });
+    socket.emit("setDiscards", discards);
+    this.HandleTurnEnd();
+  }
+  HandleTurnEnd() {
+    console.log("inside handle turn end");
+    if (this.state.cards.length === 0) {
+      socket.emit("finishRound");
+    } else {
+      console.log("picking next player");
+      socket.emit("nextPlayer");
+    }
   }
   render() {
     return (
@@ -117,7 +142,6 @@ class App extends React.Component {
         >
           <DataEntry
             className="Opener"
-            players={this.state.players}
             handleUpdateUsername={this.HandleUpdateUsername}
             handleSetUsername={this.HandleSetUsername}
           />
@@ -130,6 +154,7 @@ class App extends React.Component {
             className="Game"
             players={this.state.players}
             username={this.state.username}
+            currentPlayer={this.state.currentPlayer}
             handleStartGame={this.HandleStartGame}
             canStartGame={this.state.canStartGame}
             cards={this.state.cards}
@@ -137,6 +162,9 @@ class App extends React.Component {
             handleMoveCard={this.HandleMoveCard}
             handleDeckClick={this.HandleDeckClick}
             handleDiscardClick={this.HandleDiscardClick}
+            handleClickedCard={this.HandleClickedCard}
+            handleCardDiscard={this.HandleCardDiscard}
+            hasSelectedCard={this.state.hasSelectedCard}
           />
         </Row>
       </Container>

@@ -26,7 +26,7 @@ import Deck from "./lib/deck.js"; */
 
 let players = [];
 let deck;
-let discard = [];
+let currentPlayer = 0;
 
 io.on("connection", function (socket) {
   console.log("A user connected: " + socket.id);
@@ -49,9 +49,9 @@ io.on("connection", function (socket) {
 
   socket.on("startGame", function (players) {
     // TODO: increase the number of packs depending on the number of players
-    deck = new Deck(4);
+    deck = new Deck(2);
     deck.shuffle();
-    discard = deck.deal(1);
+    let discard = deck.deal(1);
     let sockets = io.of("/").sockets;
     players.forEach((player) => {
       if (sockets.has(player.socketId)) {
@@ -73,6 +73,13 @@ io.on("connection", function (socket) {
     io.sockets.emit("setDiscards", discards);
   });
 
+  socket.on("finishRound", function () {
+    console.log("finishRound not implemented");
+  });
+  socket.on("nextPlayer", function () {
+    currentPlayer = (currentPlayer + 1) % players.length;
+    io.sockets.emit("setCurrentPlayer", players[currentPlayer].username);
+  });
   socket.on("disconnect", function () {
     console.log("A user disconnected: " + socket.id);
     players = players.filter((player) => player.socketId !== socket.id);
