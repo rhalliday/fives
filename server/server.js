@@ -12,14 +12,42 @@ const Deck = require("./lib/deck");
 let players = [];
 let deck;
 let currentPlayer = 0;
+let currentRound = 0;
+
+function dealRound() {
+  // TODO: increase the number of packs depending on the number of players
+  deck = new Deck(2);
+  deck.shuffle();
+  let discard = deck.deal(1);
+  let sockets = io.of("/").sockets;
+  currentPlayer = currentRound % players.length;
+  players.forEach((player) => {
+    if (sockets.has(player.socketId)) {
+      sockets.get(player.socketId).emit("dealtCards", {
+        cards: deck.deal(13),
+        discards: discard,
+        currentRound: currentRound,
+      });
+    } else {
+      console.log("Could not find socket " + player.socketId);
+    }
+  });
+  io.sockets.emit("setPlayers", players);
+  io.sockets.emit("setCurrentPlayer", players[currentPlayer].username);
+  currentRound++;
+}
+
+function findPlayerByUsername(username) {
+  return players.find((player) => player.username === username);
+}
 
 io.on("connection", function (socket) {
   console.log("A user connected: " + socket.id);
 
   players.push({ socketId: socket.id });
   socket.on("setUsername", function (data) {
-    let existingPlayer = players.filter((player) => player.username === data);
-    if (existingPlayer.length > 0) {
+    let existingPlayer = findPlayerByUsername(data);
+    if (existingPlayer) {
       socket.emit(
         "userExists",
         data + " username is taken! Try some other username."
@@ -27,48 +55,47 @@ io.on("connection", function (socket) {
     } else {
       let player = players.find((p) => p.socketId == socket.id);
       player.username = data;
+      player.score = 0;
       socket.emit("userSet", data);
       io.sockets.emit("setPlayers", players);
     }
   });
 
   socket.on("startGame", function () {
-    // TODO: increase the number of packs depending on the number of players
-    deck = new Deck(2);
-    deck.shuffle();
-    let discard = deck.deal(1);
-    let sockets = io.of("/").sockets;
     // shuffle them players
     for (let i = players.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [players[i], players[j]] = [players[j], players[i]];
     }
-    players.forEach((player) => {
-      if (sockets.has(player.socketId)) {
-        sockets
-          .get(player.socketId)
-          .emit("dealtCards", [deck.deal(13), discard]);
-      } else {
-        console.log("Could not find socket " + player.socketId);
-      }
-    });
-    io.sockets.emit("setPlayers", players);
-    io.sockets.emit("setCurrentPlayer", players[0].username);
+    currentRound = 0;
+    dealRound();
+  });
+
+  socket.on("nextRound", function () {
+    dealRound();
   });
 
   socket.on("getDeckCard", function () {
     socket.emit("setDeckCard", deck.deal(1));
   });
-
+  socket.on("setTable", function (data) {
+    let player = findPlayerByUsername(data.username);
+    player.table = data.table;
+    io.sockets.emit("setPlayers", players);
+  });
   socket.on("setDiscards", function (discards) {
     io.sockets.emit("setDiscards", discards);
   });
-
+  socket.on("setScore", function (data) {
+    let player = findPlayerByUsername(data.username);
+    player.score += data.score;
+    io.sockets.emit("setPlayers", players);
+  });
   socket.on("finishRound", function () {
-    console.log("finishRound not implemented");
+    io.sockets.emit("getScore");
   });
   socket.on("nextPlayer", function () {
-    currentPlayer = (currentPlayer + 1) % players.length;
+    currentPlayer = ++currentPlayer % players.length;
     io.sockets.emit("setCurrentPlayer", players[currentPlayer].username);
   });
   socket.on("disconnect", function () {

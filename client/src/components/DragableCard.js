@@ -54,9 +54,9 @@ function DragableCard(props) {
     <div
       ref={ref}
       style={{
-        width: "1em",
         opacity: opacity,
       }}
+      className="Card-parent"
       onClick={props.clickCard}
     >
       <Card card={props.card} />
