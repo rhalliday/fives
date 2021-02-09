@@ -33,6 +33,10 @@ div.Card {
   height: 7.5em;
 }
 
+div.Card-parent {
+  width: 1em;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

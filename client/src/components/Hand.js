@@ -4,7 +4,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import ListGroup from "react-bootstrap/ListGroup";
 import DragableCard from "./DragableCard";
 
-function Cards(props) {
+function Hand(props) {
   let displayCards = props.cards.map((card, index) => {
     let clickedCard = () => props.handleClickedCard(index);
     return (
@@ -30,4 +30,4 @@ function Cards(props) {
   );
 }
 
-export default Cards;
+export default Hand;

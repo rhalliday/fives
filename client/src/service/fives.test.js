@@ -1,3 +1,4 @@
+import { test } from "picomatch";
 import { isBlackTwo, sameRank, isStraight, validator, score } from "./fives";
 
 test("isBlackTwo identifies the 2 of clubs", () => {
@@ -192,4 +193,8 @@ test("2 black 2 quadruples the score", () => {
     { rank: "2", suit: "C" },
   ];
   expect(score(cards)).toBe(120);
+});
+
+test("no cards is a score of 0", () => {
+  expect(score([])).toBe(0);
 });

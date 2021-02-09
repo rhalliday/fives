@@ -2,10 +2,14 @@ import React from "react";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
+import Container from "react-bootstrap/Container";
 import Players from "./Players";
-import Cards from "./Cards";
+import Hand from "./Hand";
 import Deck from "./Deck";
+import Table from "./Table";
+import { validator, score } from "../service/fives";
 import { socket } from "../service/socket";
+import { ROUND_RULES } from "../Constants";
 
 class PlayGame extends React.Component {
   constructor(props) {
@@ -13,10 +17,13 @@ class PlayGame extends React.Component {
     this.state = {
       players: [],
       cards: [],
+      table: [],
       canStartGame: false,
       currentPlayer: "",
       hasSelectedCard: false,
       currentRound: 0,
+      canLay: false,
+      hasGoneDown: false,
       discards: [],
     };
     this.HandleStartGame = this.HandleStartGame.bind(this);
@@ -25,6 +32,7 @@ class PlayGame extends React.Component {
     this.HandleDiscardClick = this.HandleDiscardClick.bind(this);
     this.HandleCardDiscard = this.HandleCardDiscard.bind(this);
     this.HandleClickedCard = this.HandleClickedCard.bind(this);
+    this.HandleCardLay = this.HandleCardLay.bind(this);
   }
 
   componentDidMount() {
@@ -36,8 +44,13 @@ class PlayGame extends React.Component {
       });
     });
 
-    socket.on("dealtCards", (cards) => {
-      this.setState({ cards: cards[0], discards: cards[1] });
+    socket.on("dealtCards", (data) => {
+      this.setState({
+        cards: data.cards,
+        discards: data.discards,
+        canLay: false,
+        currentRound: data.currentRound,
+      });
     });
 
     socket.on("setDeckCard", (card) => {
@@ -52,6 +65,13 @@ class PlayGame extends React.Component {
 
     socket.on("setCurrentPlayer", (currentPlayer) => {
       this.setState({ currentPlayer: currentPlayer });
+    });
+
+    socket.on("getScore", () => {
+      socket.emit("setScore", {
+        username: this.props.username,
+        score: score(this.state.cards),
+      });
     });
   }
   canClickCard() {
@@ -94,7 +114,13 @@ class PlayGame extends React.Component {
     cards[discardIndex].selected = false;
     discards.push(cards[discardIndex]);
     cards.splice(discardIndex, 1);
-    this.setState({ cards: cards, discards: discards, hasSelectedCard: false });
+    this.setState({
+      cards: cards,
+      discards: discards,
+      hasSelectedCard: false,
+      canLay: true,
+      hasGoneDown: !!this.state.table.length,
+    });
     socket.emit("setDiscards", discards);
     this.HandleTurnEnd();
   }
@@ -105,17 +131,77 @@ class PlayGame extends React.Component {
       socket.emit("nextPlayer");
     }
   }
-  render() {
-    let selectedCards = this.state.cards.filter((card) => card.selected);
-    let buttonsDisabled = !(
+  HandleCardLay() {
+    let cardGroup = this.selectedCards();
+    let currentTable = this.state.table;
+    currentTable.push(cardGroup);
+    let cards = this.state.cards.filter((card) => !card.selected);
+    this.setState({ table: currentTable, cards: cards });
+    socket.emit("setTable", {
+      username: this.props.username,
+      table: currentTable,
+    });
+  }
+  selectedCards() {
+    return this.state.cards.filter((card) => card.selected);
+  }
+  buttonsEnabled() {
+    return (
       this.state.currentPlayer === this.props.username &&
       this.state.hasSelectedCard
     );
+  }
+  discardButtonDisabled() {
+    return !(
+      this.buttonsEnabled() &&
+      this.selectedCards().length === 1 &&
+      this.hasValidTable()
+    );
+  }
+  layButtonDisabled() {
+    return !(
+      this.buttonsEnabled() &&
+      this.state.canLay &&
+      this.hasValidGroup()
+    );
+  }
+  hasValidTable() {
+    // if we've already gone down, or our table is empty then it's valid
+    if (this.state.hasGoneDown || this.state.table.length === 0) {
+      return true;
+    }
+    // valid group will make sure that we've only put groups down of the
+    // correct length, so we just need to make sure they're the right number
+    return this.state.table.length === ROUND_RULES[this.state.currentRound][0];
+  }
+  hasValidGroup() {
+    let cardGroup = this.selectedCards();
+    // simplest check is that we have 3 or more cards in the group
+    if (cardGroup.length < 3) return false;
+
+    // if we're going down this round
+    if (!this.state.hasGoneDown) {
+      // make sure the group is the correct size
+      if (cardGroup.length !== ROUND_RULES[this.state.currentRound][1]) {
+        return false;
+      }
+      // make sure we're not forming too many groups
+      if (this.state.table.length >= ROUND_RULES[this.state.currentRound][0]) {
+        return false;
+      }
+    }
+    // return whether this is a valid group
+    return validator(cardGroup);
+  }
+  render() {
     return (
       <>
-        <Col>
-          <Row className="mb-2">
-            <Col xs lg="8">
+        <Container>
+          <h4>{ROUND_RULES[this.state.currentRound][2]}</h4>
+        </Container>
+        <Container>
+          <Row>
+            <Col>
               <Row>
                 <Deck
                   discards={this.state.discards}
@@ -125,13 +211,24 @@ class PlayGame extends React.Component {
               </Row>
             </Col>
             <Col>
-              <Button
-                variant="primary"
-                disabled={buttonsDisabled || selectedCards.length !== 1}
-                onClick={this.HandleCardDiscard}
-              >
-                Discard
-              </Button>
+              <Row>
+                <Button
+                  variant="primary"
+                  disabled={this.discardButtonDisabled()}
+                  onClick={this.HandleCardDiscard}
+                >
+                  Discard
+                </Button>
+              </Row>
+              <Row>
+                <Button
+                  variant="primary"
+                  disabled={this.layButtonDisabled()}
+                  onClick={this.HandleCardLay}
+                >
+                  Lay Cards
+                </Button>
+              </Row>
             </Col>
             <Col>
               <Players
@@ -140,31 +237,41 @@ class PlayGame extends React.Component {
               />
             </Col>
           </Row>
-          <Row
-            id="start-game"
-            style={
-              this.state.canStartGame && this.state.cards.length === 0
-                ? {}
-                : { display: "none" }
-            }
+        </Container>
+        <Row
+          id="start-game"
+          style={
+            this.state.canStartGame && this.state.cards.length === 0
+              ? {}
+              : { display: "none" }
+          }
+        >
+          <Button
+            variant="success"
+            size="lg"
+            className="StartButton"
+            onClick={this.HandleStartGame}
           >
-            <Button
-              variant="success"
-              size="lg"
-              className="StartButton"
-              onClick={this.HandleStartGame}
-            >
-              Start
-            </Button>
-          </Row>
+            Start
+          </Button>
+        </Row>
+        <Container>
           <Row>
-            <Cards
-              cards={this.state.cards}
-              handleMoveCard={this.HandleMoveCard}
-              handleClickedCard={this.HandleClickedCard}
-            />
+            <Container>
+              <Row id="player-table">
+                <Table cards={this.state.table} />
+              </Row>
+            </Container>
+
+            <Row id="player-hand">
+              <Hand
+                cards={this.state.cards}
+                handleMoveCard={this.HandleMoveCard}
+                handleClickedCard={this.HandleClickedCard}
+              />
+            </Row>
           </Row>
-        </Col>
+        </Container>
       </>
     );
   }
