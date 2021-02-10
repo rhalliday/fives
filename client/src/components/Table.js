@@ -6,12 +6,13 @@ import Col from "react-bootstrap/Col";
 import Card from "./Card";
 
 function Table(props) {
-  let displayCards = (cards) => {
+  let displayCards = (cards, groupIndex) => {
     return cards.map((card, index) => {
       return (
         <ListGroup.Item
           key={index}
           style={{ padding: "0", marginTop: card.selected ? "0" : "2em" }}
+          onClick={() => props.groupClickHandler(groupIndex)}
         >
           <div className="Card-parent">
             <Card card={card} />
@@ -24,7 +25,7 @@ function Table(props) {
     return (
       <Col key={index}>
         <ListGroup horizontal style={{ marginTop: "2em" }}>
-          {displayCards(cardGroup)}
+          {displayCards(cardGroup, index)}
         </ListGroup>
       </Col>
     );

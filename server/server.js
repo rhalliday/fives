@@ -31,6 +31,8 @@ function dealRound() {
     } else {
       console.log("Could not find socket " + player.socketId);
     }
+    // make sure the players details have been reset
+    player.table = [];
   });
   io.sockets.emit("setPlayers", players);
   io.sockets.emit("setCurrentPlayer", players[currentPlayer].username);
@@ -92,7 +94,13 @@ io.on("connection", function (socket) {
     io.sockets.emit("setPlayers", players);
   });
   socket.on("finishRound", function () {
-    io.sockets.emit("getScore");
+    let losingPlayers = players.filter(
+      (player) => player.socketId !== socket.id
+    );
+    let sockets = io.of("/").sockets;
+    losingPlayers.forEach((player) => {
+      sockets.get(player.socketId).emit("getScore");
+    });
   });
   socket.on("nextPlayer", function () {
     currentPlayer = ++currentPlayer % players.length;
