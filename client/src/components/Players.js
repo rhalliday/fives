@@ -5,19 +5,18 @@ import PlayerDisplay from "./PlayerDisplay";
 function Players(props) {
   let players = props.players;
   let playerList = players.map((player) => {
-    let clickHandler = (event) => {
-      props.handleClickPlayer(player);
-    };
     return (
       <ListGroup.Item
         key={player.username}
-        onClick={clickHandler}
         style={{
           backgroundColor:
             player.username === props.currentPlayer ? "#0f0" : "",
         }}
       >
-        <PlayerDisplay player={player} />
+        <PlayerDisplay
+          player={player}
+          handleAddToGroup={props.handleAddToGroup}
+        />
       </ListGroup.Item>
     );
   });

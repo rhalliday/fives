@@ -42,7 +42,9 @@ export function isStraight(cards) {
 }
 
 // are the group of cards valid
-export function validator(cards) {
+export function validator(cardsOriginal) {
+  // make a copy so that we can mess with it
+  let cards = [...cardsOriginal];
   if (cards.length < 3) return false;
 
   if (sameRank([...cards])) return true;

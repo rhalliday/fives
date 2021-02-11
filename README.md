@@ -22,3 +22,10 @@ Black twos can be used as any card.
 The round ends when one of the players has got rid of all of their cards. The players with cards remaining must count add the values of all the cards in their hands to get their score. Face cards are worth 10, and Aces (that can be used as high or low cards) are worth 15, all other cards are the value displayed on the card. There is a gotcha where, if you have a black two in your hand, the value of your hand is doubled. For each black two in your hand, the value doubles!!
 
 The winner is the person with the lowest score.
+
+# TODO
+
+1. Need to be able to UNDO laying cards on the first lay if there are 2 sets
+2. Shouldn't be able to lay cards if you only have 3 cards left
+3. Should only be able to discard if you have 1 card left
+4. Handle what happens when the game is finished. - Setting the title, not dealing anymore cards, still showing the score

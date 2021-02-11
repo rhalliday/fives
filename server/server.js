@@ -31,6 +31,8 @@ function dealRound() {
     } else {
       console.log("Could not find socket " + player.socketId);
     }
+    // make sure the players details have been reset
+    player.table = [];
   });
   io.sockets.emit("setPlayers", players);
   io.sockets.emit("setCurrentPlayer", players[currentPlayer].username);
@@ -44,7 +46,7 @@ function findPlayerByUsername(username) {
 io.on("connection", function (socket) {
   console.log("A user connected: " + socket.id);
 
-  players.push({ socketId: socket.id });
+  players.push({ socketId: socket.id, username: "", table: [], score: 0 });
   socket.on("setUsername", function (data) {
     let existingPlayer = findPlayerByUsername(data);
     if (existingPlayer) {
@@ -55,7 +57,6 @@ io.on("connection", function (socket) {
     } else {
       let player = players.find((p) => p.socketId == socket.id);
       player.username = data;
-      player.score = 0;
       socket.emit("userSet", data);
       io.sockets.emit("setPlayers", players);
     }
@@ -92,11 +93,21 @@ io.on("connection", function (socket) {
     io.sockets.emit("setPlayers", players);
   });
   socket.on("finishRound", function () {
-    io.sockets.emit("getScore");
+    let losingPlayers = players.filter(
+      (player) => player.socketId !== socket.id
+    );
+    let sockets = io.of("/").sockets;
+    losingPlayers.forEach((player) => {
+      sockets.get(player.socketId).emit("getScore");
+    });
   });
   socket.on("nextPlayer", function () {
     currentPlayer = ++currentPlayer % players.length;
     io.sockets.emit("setCurrentPlayer", players[currentPlayer].username);
+  });
+  socket.on("updateUserTable", function (player) {
+    let sockets = io.of("/").sockets;
+    sockets.get(player.socketId).emit("updateTable", player.table);
   });
   socket.on("disconnect", function () {
     console.log("A user disconnected: " + socket.id);

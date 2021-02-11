@@ -33,6 +33,8 @@ class PlayGame extends React.Component {
     this.HandleCardDiscard = this.HandleCardDiscard.bind(this);
     this.HandleClickedCard = this.HandleClickedCard.bind(this);
     this.HandleCardLay = this.HandleCardLay.bind(this);
+    this.HandleAddToTableGroup = this.HandleAddToTableGroup.bind(this);
+    this.HandleAddToOtherTable = this.HandleAddToOtherTable.bind(this);
   }
 
   componentDidMount() {
@@ -50,6 +52,7 @@ class PlayGame extends React.Component {
         discards: data.discards,
         canLay: false,
         currentRound: data.currentRound,
+        table: [],
       });
     });
 
@@ -72,6 +75,10 @@ class PlayGame extends React.Component {
         username: this.props.username,
         score: score(this.state.cards),
       });
+    });
+
+    socket.on("updateTable", (table) => {
+      this.setState({ table: table });
     });
   }
   canClickCard() {
@@ -127,6 +134,7 @@ class PlayGame extends React.Component {
   HandleTurnEnd() {
     if (this.state.cards.length === 0) {
       socket.emit("finishRound");
+      setTimeout(() => socket.emit("nextRound"), 2000);
     } else {
       socket.emit("nextPlayer");
     }
@@ -135,12 +143,69 @@ class PlayGame extends React.Component {
     let cardGroup = this.selectedCards();
     let currentTable = this.state.table;
     currentTable.push(cardGroup);
+    this.updateMyTable(currentTable);
+  }
+  updateMyTable(currentTable) {
     let cards = this.state.cards.filter((card) => !card.selected);
     this.setState({ table: currentTable, cards: cards });
     socket.emit("setTable", {
       username: this.props.username,
       table: currentTable,
     });
+  }
+  HandleAddToTableGroup(groupIndex) {
+    let cardGroup = this.selectedCards();
+    let table = this.state.table;
+    let selectedGroup = table[groupIndex];
+    let newTableGroup = this.addToGroup(cardGroup, selectedGroup);
+    // if we didn't make a valid group then we can't lay them
+    if (newTableGroup.length > 0) {
+      table[groupIndex] = newTableGroup;
+      this.updateMyTable(table);
+    }
+  }
+  HandleAddToOtherTable(groupIndex, otherPlayer) {
+    let cardGroup = this.selectedCards();
+    let table = otherPlayer.table;
+    let selectedGroup = table[groupIndex];
+    let newTableGroup = this.addToGroup(cardGroup, selectedGroup);
+    if (newTableGroup.length > 0) {
+      table[groupIndex] = newTableGroup;
+      let cards = this.state.cards.filter((card) => !card.selected);
+      this.setState({ cards: cards });
+      // notify all the other users that the table has changed
+      socket.emit("setTable", {
+        username: otherPlayer.username,
+        table: table,
+      });
+      otherPlayer.table = table;
+      // notify the specific user that their table has changed
+      socket.emit("updateUserTable", otherPlayer);
+    }
+  }
+  addToGroup(cardGroup, selectedGroup) {
+    // if we havn't gone down yet, we can't lay cards
+    if (!this.state.hasGoneDown) {
+      return [];
+    }
+    console.log(cardGroup);
+    console.log(selectedGroup);
+    // check to see if adding the cards to the front of the group is valid
+    let newGroup = cardGroup.concat(selectedGroup);
+    console.log(newGroup);
+    if (validator(newGroup)) {
+      return newGroup;
+    }
+    console.log("validation failed");
+    // try adding them to the end
+    newGroup = selectedGroup.concat(cardGroup);
+    console.log(newGroup);
+    if (validator(newGroup)) {
+      return newGroup;
+    }
+
+    // it's not valid
+    return [];
   }
   selectedCards() {
     return this.state.cards.filter((card) => card.selected);
@@ -234,6 +299,7 @@ class PlayGame extends React.Component {
               <Players
                 players={this.state.players}
                 currentPlayer={this.state.currentPlayer}
+                handleAddToGroup={this.HandleAddToOtherTable}
               />
             </Col>
           </Row>
@@ -259,7 +325,10 @@ class PlayGame extends React.Component {
           <Row>
             <Container>
               <Row id="player-table">
-                <Table cards={this.state.table} />
+                <Table
+                  cards={this.state.table}
+                  groupClickHandler={this.HandleAddToTableGroup}
+                />
               </Row>
             </Container>
 
