@@ -34,6 +34,7 @@ class PlayGame extends React.Component {
     this.HandleClickedCard = this.HandleClickedCard.bind(this);
     this.HandleCardLay = this.HandleCardLay.bind(this);
     this.HandleAddToTableGroup = this.HandleAddToTableGroup.bind(this);
+    this.HandleAddToOtherTable = this.HandleAddToOtherTable.bind(this);
   }
 
   componentDidMount() {
@@ -74,6 +75,10 @@ class PlayGame extends React.Component {
         username: this.props.username,
         score: score(this.state.cards),
       });
+    });
+
+    socket.on("updateTable", (table) => {
+      this.setState({ table: table });
     });
   }
   canClickCard() {
@@ -157,6 +162,25 @@ class PlayGame extends React.Component {
     if (newTableGroup.length > 0) {
       table[groupIndex] = newTableGroup;
       this.updateMyTable(table);
+    }
+  }
+  HandleAddToOtherTable(groupIndex, otherPlayer) {
+    let cardGroup = this.selectedCards();
+    let table = otherPlayer.table;
+    let selectedGroup = table[groupIndex];
+    let newTableGroup = this.addToGroup(cardGroup, selectedGroup);
+    if (newTableGroup.length > 0) {
+      table[groupIndex] = newTableGroup;
+      let cards = this.state.cards.filter((card) => !card.selected);
+      this.setState({ cards: cards });
+      // notify all the other users that the table has changed
+      socket.emit("setTable", {
+        username: otherPlayer.username,
+        table: table,
+      });
+      otherPlayer.table = table;
+      // notify the specific user that their table has changed
+      socket.emit("updateUserTable", otherPlayer);
     }
   }
   addToGroup(cardGroup, selectedGroup) {
@@ -275,6 +299,7 @@ class PlayGame extends React.Component {
               <Players
                 players={this.state.players}
                 currentPlayer={this.state.currentPlayer}
+                handleAddToGroup={this.HandleAddToOtherTable}
               />
             </Col>
           </Row>

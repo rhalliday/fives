@@ -33,8 +33,17 @@ div.Card {
   height: 7.5em;
 }
 
+div.Card.small {
+  width: 4em;
+  height: 6em;
+}
+
 div.Card-parent {
   width: 1em;
+}
+
+div.Card-parent.small {
+  width: 0.5em;
 }
 
 @keyframes App-logo-spin {

@@ -4,8 +4,9 @@ import { getImageLocation, getCardImageName } from "./Utils";
 
 function Card(props) {
   let imageName = getCardImageName(props.card);
+  let className = "Card " + props.className;
   return (
-    <div className="Card" onClick={props.onClick}>
+    <div className={className} onClick={props.onClick}>
       <img
         src={getImageLocation(imageName)}
         alt={imageName}
