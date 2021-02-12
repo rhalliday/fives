@@ -240,6 +240,7 @@ class PlayGame extends React.Component {
     return !(
       this.buttonsEnabled() &&
       this.state.canLay &&
+      this.state.cards.length > 3 &&
       this.hasValidGroup()
     );
   }

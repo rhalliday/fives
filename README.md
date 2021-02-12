@@ -25,6 +25,5 @@ The winner is the person with the lowest score.
 
 # TODO
 
-1. Shouldn't be able to lay cards if you only have 3 cards left
-2. Should only be able to discard if you have 1 card left
-3. Handle what happens when the game is finished. - Setting the title, not dealing anymore cards, still showing the score
+1. Should only be able to discard if you have 1 card left
+2. Handle what happens when the game is finished. - Setting the title, not dealing anymore cards, still showing the score
