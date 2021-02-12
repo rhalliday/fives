@@ -172,6 +172,7 @@ class PlayGame extends React.Component {
     });
   }
   HandleAddToTableGroup(groupIndex) {
+    if (this.state.cards.length < 2) return;
     let cardGroup = this.selectedCards();
     let table = this.state.table;
     let selectedGroup = table[groupIndex];
@@ -183,6 +184,7 @@ class PlayGame extends React.Component {
     }
   }
   HandleAddToOtherTable(groupIndex, otherPlayer) {
+    if (this.state.cards.length < 2) return;
     let cardGroup = this.selectedCards();
     let table = otherPlayer.table;
     let selectedGroup = table[groupIndex];
