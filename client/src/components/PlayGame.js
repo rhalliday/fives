@@ -35,6 +35,7 @@ class PlayGame extends React.Component {
     this.HandleCardLay = this.HandleCardLay.bind(this);
     this.HandleAddToTableGroup = this.HandleAddToTableGroup.bind(this);
     this.HandleAddToOtherTable = this.HandleAddToOtherTable.bind(this);
+    this.HandleUndoCardLay = this.HandleUndoCardLay.bind(this);
   }
 
   componentDidMount() {
@@ -149,6 +150,19 @@ class PlayGame extends React.Component {
     currentTable.push(cardGroup);
     this.updateMyTable(currentTable);
   }
+  HandleUndoCardLay() {
+    // put the cards back in my hand
+    let tableCards = this.state.table.shift().map((card) => {
+      card.selected = false;
+      return card;
+    });
+    let cards = this.state.cards.concat(tableCards);
+    this.setState({ table: [], cards: cards });
+    socket.emit("setTable", {
+      username: this.props.username,
+      table: [],
+    });
+  }
   updateMyTable(currentTable) {
     let cards = this.state.cards.filter((card) => !card.selected);
     this.setState({ table: currentTable, cards: cards });
@@ -158,6 +172,7 @@ class PlayGame extends React.Component {
     });
   }
   HandleAddToTableGroup(groupIndex) {
+    if (this.state.cards.length < 2) return;
     let cardGroup = this.selectedCards();
     let table = this.state.table;
     let selectedGroup = table[groupIndex];
@@ -169,6 +184,7 @@ class PlayGame extends React.Component {
     }
   }
   HandleAddToOtherTable(groupIndex, otherPlayer) {
+    if (this.state.cards.length < 2) return;
     let cardGroup = this.selectedCards();
     let table = otherPlayer.table;
     let selectedGroup = table[groupIndex];
@@ -192,18 +208,13 @@ class PlayGame extends React.Component {
     if (!this.state.hasGoneDown) {
       return [];
     }
-    console.log(cardGroup);
-    console.log(selectedGroup);
     // check to see if adding the cards to the front of the group is valid
     let newGroup = cardGroup.concat(selectedGroup);
-    console.log(newGroup);
     if (validator(newGroup)) {
       return newGroup;
     }
-    console.log("validation failed");
     // try adding them to the end
     newGroup = selectedGroup.concat(cardGroup);
-    console.log(newGroup);
     if (validator(newGroup)) {
       return newGroup;
     }
@@ -231,8 +242,12 @@ class PlayGame extends React.Component {
     return !(
       this.buttonsEnabled() &&
       this.state.canLay &&
+      this.state.cards.length > 3 &&
       this.hasValidGroup()
     );
+  }
+  showUndoButton() {
+    return this.state.currentRound % 2 && this.state.table.length % 2;
   }
   hasValidTable() {
     // if we've already gone down, or our table is empty then it's valid
@@ -296,6 +311,15 @@ class PlayGame extends React.Component {
                   onClick={this.HandleCardLay}
                 >
                   Lay Cards
+                </Button>
+              </Row>
+              <Row>
+                <Button
+                  variant="primary"
+                  onClick={this.HandleUndoCardLay}
+                  style={this.showUndoButton() ? {} : { display: "none" }}
+                >
+                  Undo
                 </Button>
               </Row>
             </Col>
