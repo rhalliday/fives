@@ -39,7 +39,9 @@ class PlayGame extends React.Component {
 
   componentDidMount() {
     socket.on("setPlayers", (gamePlayers) => {
-      let canStartGame = gamePlayers[0].username === this.props.username;
+      let canStartGame =
+        gamePlayers[0].username === this.props.username &&
+        this.state.currentRound === 0;
       this.setState({
         players: gamePlayers,
         canStartGame: canStartGame,
@@ -134,7 +136,9 @@ class PlayGame extends React.Component {
   HandleTurnEnd() {
     if (this.state.cards.length === 0) {
       socket.emit("finishRound");
-      setTimeout(() => socket.emit("nextRound"), 2000);
+      if (this.state.currentRound < ROUND_RULES.length - 1) {
+        setTimeout(() => socket.emit("nextRound"), 2000);
+      }
     } else {
       socket.emit("nextPlayer");
     }
