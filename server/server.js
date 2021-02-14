@@ -1,8 +1,10 @@
 const server = require("express")();
 const http = require("http").createServer(server);
+const clientServer = process.env["CLIENT_SERVER"] || "localhost";
+const clientPort = process.env["CLIENT_PORT"] || "3000";
 const io = require("socket.io")(http, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "*",
     methods: ["GET", "POST"],
   },
 });

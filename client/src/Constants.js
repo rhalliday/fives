@@ -2,7 +2,10 @@ export const ItemTypes = {
   CARD: "card",
 };
 
-export const ENDPOINT = "http://localhost:8080";
+const server = process.env["SERVER_HOST"] || "localhost";
+const port = process.env["SERVER_PORT"] || "8080";
+
+export const ENDPOINT = "http://" + server + ":" + port;
 
 export const ROUND_RULES = [
   [1, 3, "One Three"],
