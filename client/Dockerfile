@@ -11,7 +11,7 @@ RUN npm install --production
 
 COPY . ./
 
-RUN npm build
+RUN npm run build
 
 FROM node:15.0.1-alpine
 ENV NODE_ENV=production
