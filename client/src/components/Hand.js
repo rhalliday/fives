@@ -23,7 +23,7 @@ function Hand(props) {
     );
   });
   return (
-    <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
+    <DndProvider backend={TouchBackend}>
       <ListGroup horizontal style={{ marginTop: "2em" }}>
         {displayCards}
       </ListGroup>
