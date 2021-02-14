@@ -4,7 +4,7 @@ const clientServer = process.env["CLIENT_SERVER"] || "localhost";
 const clientPort = process.env["CLIENT_PORT"] || "3000";
 const io = require("socket.io")(http, {
   cors: {
-    origin: "*",
+    origin: "http://" + clientServer + ":" + clientPort,
     methods: ["GET", "POST"],
   },
 });
