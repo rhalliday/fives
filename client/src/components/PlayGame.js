@@ -6,10 +6,9 @@ import Container from "react-bootstrap/Container";
 import Players from "./Players";
 import Hand from "./Hand";
 import Deck from "./Deck";
-import Table from "./Table";
 import { validator, score } from "../service/fives";
 import { socket } from "../service/socket";
-import { ROUND_RULES } from "../Constants";
+import { ROUND_RULES, TIME_TO_SHUFFLE } from "../Constants";
 
 class PlayGame extends React.Component {
   constructor(props) {
@@ -25,6 +24,7 @@ class PlayGame extends React.Component {
       canLay: false,
       hasGoneDown: false,
       discards: [],
+      message: "Waiting for the game to start",
     };
     this.HandleStartGame = this.HandleStartGame.bind(this);
     this.HandleMoveCard = this.HandleMoveCard.bind(this);
@@ -63,6 +63,7 @@ class PlayGame extends React.Component {
       let cards = this.state.cards;
       cards.push(card[0]);
       this.setState({ cards: cards });
+      socket.emit("setHand", { username: this.props.username, hand: cards });
     });
 
     socket.on("setDiscards", (discards) => {
@@ -79,10 +80,17 @@ class PlayGame extends React.Component {
         score: score(this.state.cards),
       });
     });
-
-    socket.on("updateTable", (table) => {
-      this.setState({ table: table });
+    socket.on("setUserData", (data) => {
+      this.setState({
+        cards: data.hand,
+      });
     });
+    socket.on("setMessage", (message) => {
+      this.setState({ message: message });
+    });
+  }
+  sendMessage(message) {
+    socket.emit("sendMessage", message);
   }
   canClickCard() {
     return (
@@ -103,6 +111,7 @@ class PlayGame extends React.Component {
     if (!this.canClickCard()) return;
     this.setState({ hasSelectedCard: true });
     socket.emit("getDeckCard");
+    this.sendMessage("card selected from deck");
   }
   HandleDiscardClick() {
     if (!this.canClickCard()) return;
@@ -110,7 +119,9 @@ class PlayGame extends React.Component {
     let cards = this.state.cards;
     cards.push(discards.pop());
     this.setState({ cards: cards, discards: discards, hasSelectedCard: true });
+    socket.emit("setHand", { username: this.props.username, hand: cards });
     socket.emit("setDiscards", discards);
+    this.sendMessage("card selected from discard");
   }
   HandleClickedCard(cardIndex) {
     let cards = this.state.cards;
@@ -131,14 +142,17 @@ class PlayGame extends React.Component {
       canLay: true,
       hasGoneDown: !!this.state.table.length,
     });
+    socket.emit("setHand", { username: this.props.username, hand: cards });
     socket.emit("setDiscards", discards);
     this.HandleTurnEnd();
   }
   HandleTurnEnd() {
     if (this.state.cards.length === 0) {
       socket.emit("finishRound");
+      const message = this.props.username + " has chipped!";
+      this.sendMessage(message);
       if (this.state.currentRound < ROUND_RULES.length - 1) {
-        setTimeout(() => socket.emit("nextRound"), 2000);
+        setTimeout(() => socket.emit("nextRound"), TIME_TO_SHUFFLE);
       }
     } else {
       socket.emit("nextPlayer");
@@ -158,6 +172,7 @@ class PlayGame extends React.Component {
     });
     let cards = this.state.cards.concat(tableCards);
     this.setState({ table: [], cards: cards });
+    socket.emit("setHand", { username: this.props.username, hand: cards });
     socket.emit("setTable", {
       username: this.props.username,
       table: [],
@@ -166,6 +181,7 @@ class PlayGame extends React.Component {
   updateMyTable(currentTable) {
     let cards = this.state.cards.filter((card) => !card.selected);
     this.setState({ table: currentTable, cards: cards });
+    socket.emit("setHand", { username: this.props.username, hand: cards });
     socket.emit("setTable", {
       username: this.props.username,
       table: currentTable,
@@ -193,6 +209,7 @@ class PlayGame extends React.Component {
       table[groupIndex] = newTableGroup;
       let cards = this.state.cards.filter((card) => !card.selected);
       this.setState({ cards: cards });
+      socket.emit("setHand", { username: this.props.username, hand: cards });
       // notify all the other users that the table has changed
       socket.emit("setTable", {
         username: otherPlayer.username,
@@ -247,7 +264,7 @@ class PlayGame extends React.Component {
     );
   }
   showUndoButton() {
-    return this.state.currentRound % 2 && this.state.table.length % 2;
+    return this.state.currentRound % 2 && this.state.table.length === 1;
   }
   hasValidTable() {
     // if we've already gone down, or our table is empty then it's valid
@@ -282,6 +299,7 @@ class PlayGame extends React.Component {
       <>
         <Container>
           <h4>{ROUND_RULES[this.state.currentRound][2]}</h4>
+          <div>{this.state.message}</div>
         </Container>
         <Container>
           <Row>
@@ -293,6 +311,15 @@ class PlayGame extends React.Component {
                   handleDiscardClick={this.HandleDiscardClick}
                 />
               </Row>
+              <Container>
+                <Row id="player-hand">
+                  <Hand
+                    cards={this.state.cards}
+                    handleMoveCard={this.HandleMoveCard}
+                    handleClickedCard={this.HandleClickedCard}
+                  />
+                </Row>
+              </Container>
             </Col>
             <Col>
               <Row>
@@ -349,26 +376,6 @@ class PlayGame extends React.Component {
             Start
           </Button>
         </Row>
-        <Container>
-          <Row>
-            <Container>
-              <Row id="player-table">
-                <Table
-                  cards={this.state.table}
-                  groupClickHandler={this.HandleAddToTableGroup}
-                />
-              </Row>
-            </Container>
-
-            <Row id="player-hand">
-              <Hand
-                cards={this.state.cards}
-                handleMoveCard={this.HandleMoveCard}
-                handleClickedCard={this.HandleClickedCard}
-              />
-            </Row>
-          </Row>
-        </Container>
       </>
     );
   }

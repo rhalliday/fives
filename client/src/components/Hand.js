@@ -23,6 +23,7 @@ function Hand(props) {
     );
   });
   return (
+    //<DndProvider backend={HTML5Backend}>
     <DndProvider backend={TouchBackend}>
       <ListGroup horizontal style={{ marginTop: "2em" }}>
         {displayCards}

@@ -15,3 +15,5 @@ export const ROUND_RULES = [
   [1, 5, "One Five"],
   [2, 5, "Two Five's"],
 ];
+
+export const TIME_TO_SHUFFLE = 10000;
