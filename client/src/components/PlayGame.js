@@ -328,6 +328,15 @@ class PlayGame extends React.Component {
                   Undo
                 </Button>
               </Row>
+              <Container>
+                <Row id="player-hand">
+                  <Hand
+                    cards={this.state.cards}
+                    handleMoveCard={this.HandleMoveCard}
+                    handleClickedCard={this.HandleClickedCard}
+                  />
+                </Row>
+              </Container>
             </Col>
             <Col>
               <Players
@@ -355,15 +364,6 @@ class PlayGame extends React.Component {
             Start
           </Button>
         </Row>
-        <Container>
-          <Row id="player-hand">
-            <Hand
-              cards={this.state.cards}
-              handleMoveCard={this.HandleMoveCard}
-              handleClickedCard={this.HandleClickedCard}
-            />
-          </Row>
-        </Container>
       </>
     );
   }
