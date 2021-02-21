@@ -41,7 +41,12 @@ function dealRound() {
   });
   io.sockets.emit("setPlayers", players);
   io.sockets.emit("setCurrentPlayer", players[currentPlayer].username);
+  sendMessage("waiting for player to pick up");
   currentRound++;
+}
+
+function sendMessage(message) {
+  io.sockets.emit("setMessage", message);
 }
 
 function findPlayerByUsername(username) {
@@ -97,9 +102,15 @@ io.on("connection", function (socket) {
   });
   socket.on("setHand", function (data) {
     let player = findPlayerByUsername(data.username);
-    player.setHand(data.hand);
+    if (player) {
+      player.setHand(data.hand);
+    } else {
+      console.log("Unable to find user: " + data.username);
+    }
   });
-
+  socket.on("sendMessage", function (message) {
+    sendMessage(message);
+  });
   socket.on("setDiscards", function (discards) {
     io.sockets.emit("setDiscards", discards);
   });
@@ -125,6 +136,7 @@ io.on("connection", function (socket) {
       currentPlayer = currentPlayer % players.length;
     }
     io.sockets.emit("setCurrentPlayer", players[currentPlayer].username);
+    sendMessage("waiting for player to pick up");
   });
   socket.on("disconnect", function () {
     // allow the player to reconnect with the same username but a different socketId

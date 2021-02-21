@@ -8,7 +8,7 @@ import Hand from "./Hand";
 import Deck from "./Deck";
 import { validator, score } from "../service/fives";
 import { socket } from "../service/socket";
-import { ROUND_RULES } from "../Constants";
+import { ROUND_RULES, TIME_TO_SHUFFLE } from "../Constants";
 
 class PlayGame extends React.Component {
   constructor(props) {
@@ -24,6 +24,7 @@ class PlayGame extends React.Component {
       canLay: false,
       hasGoneDown: false,
       discards: [],
+      message: "Waiting for the game to start",
     };
     this.HandleStartGame = this.HandleStartGame.bind(this);
     this.HandleMoveCard = this.HandleMoveCard.bind(this);
@@ -84,6 +85,12 @@ class PlayGame extends React.Component {
         cards: data.hand,
       });
     });
+    socket.on("setMessage", (message) => {
+      this.setState({ message: message });
+    });
+  }
+  sendMessage(message) {
+    socket.emit("sendMessage", message);
   }
   canClickCard() {
     return (
@@ -104,6 +111,7 @@ class PlayGame extends React.Component {
     if (!this.canClickCard()) return;
     this.setState({ hasSelectedCard: true });
     socket.emit("getDeckCard");
+    this.sendMessage("card selected from deck");
   }
   HandleDiscardClick() {
     if (!this.canClickCard()) return;
@@ -113,6 +121,7 @@ class PlayGame extends React.Component {
     this.setState({ cards: cards, discards: discards, hasSelectedCard: true });
     socket.emit("setHand", { username: this.props.username, hand: cards });
     socket.emit("setDiscards", discards);
+    this.sendMessage("card selected from discard");
   }
   HandleClickedCard(cardIndex) {
     let cards = this.state.cards;
@@ -140,8 +149,10 @@ class PlayGame extends React.Component {
   HandleTurnEnd() {
     if (this.state.cards.length === 0) {
       socket.emit("finishRound");
+      const message = this.props.username + " has chipped!";
+      this.sendMessage(message);
       if (this.state.currentRound < ROUND_RULES.length - 1) {
-        setTimeout(() => socket.emit("nextRound"), 2000);
+        setTimeout(() => socket.emit("nextRound"), TIME_TO_SHUFFLE);
       }
     } else {
       socket.emit("nextPlayer");
@@ -288,6 +299,7 @@ class PlayGame extends React.Component {
       <>
         <Container>
           <h4>{ROUND_RULES[this.state.currentRound][2]}</h4>
+          <div>{this.state.message}</div>
         </Container>
         <Container>
           <Row>
@@ -299,6 +311,15 @@ class PlayGame extends React.Component {
                   handleDiscardClick={this.HandleDiscardClick}
                 />
               </Row>
+              <Container>
+                <Row id="player-hand">
+                  <Hand
+                    cards={this.state.cards}
+                    handleMoveCard={this.HandleMoveCard}
+                    handleClickedCard={this.HandleClickedCard}
+                  />
+                </Row>
+              </Container>
             </Col>
             <Col>
               <Row>
@@ -328,15 +349,6 @@ class PlayGame extends React.Component {
                   Undo
                 </Button>
               </Row>
-              <Container>
-                <Row id="player-hand">
-                  <Hand
-                    cards={this.state.cards}
-                    handleMoveCard={this.HandleMoveCard}
-                    handleClickedCard={this.HandleClickedCard}
-                  />
-                </Row>
-              </Container>
             </Col>
             <Col>
               <Players
