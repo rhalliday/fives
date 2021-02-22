@@ -130,7 +130,7 @@ io.on("connection", function (socket) {
   });
   socket.on("nextPlayer", function () {
     currentPlayer = ++currentPlayer % players.length;
-    if (players[currentPlayer].socketId === "") {
+    if (players[currentPlayer].isValid()) {
       players = players.filter((player) => player.socketId.length > 0);
       io.sockets.emit("setPlayers", players);
       currentPlayer = currentPlayer % players.length;

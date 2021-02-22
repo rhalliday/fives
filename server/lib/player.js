@@ -26,4 +26,13 @@ module.exports = class Player {
   addScore(score) {
     this.score += score;
   }
+
+  isValid() {
+    return (
+      this.socketId &&
+      this.socketId.length > 0 &&
+      this.username &&
+      this.username.length > 0
+    );
+  }
 };

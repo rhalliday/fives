@@ -48,6 +48,7 @@ div.Card-parent.small {
 
 div#player-hand {
   margin-left: 1em;
+  width: 18em;
 }
 
 @keyframes App-logo-spin {
