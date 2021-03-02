@@ -1,5 +1,13 @@
-module.exports = class Player {
-  constructor(socketId, username) {
+import { Card } from './card';
+
+export class Player {
+  socketId: string;
+  username: string;
+  table: Card[][];
+  hand: Card[];
+  score: number;
+
+  constructor(socketId: string, username: string) {
     this.socketId = socketId;
     this.username = username;
     this.table = [];
@@ -11,19 +19,19 @@ module.exports = class Player {
     this.setSocket("");
   }
 
-  setSocket(socketId) {
+  setSocket(socketId: string) {
     this.socketId = socketId;
   }
 
-  setTable(table) {
+  setTable(table: Card[][]) {
     this.table = table;
   }
 
-  setHand(hand) {
+  setHand(hand: Card[]) {
     this.hand = hand;
   }
 
-  addScore(score) {
+  addScore(score: number) {
     this.score += score;
   }
 
