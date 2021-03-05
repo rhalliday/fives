@@ -1,10 +1,9 @@
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
-import { Card } from "./lib/card";
-import { Deck } from "./lib/deck";
-import { Player } from "./lib/player";
+import Card from "./lib/card";
+import Deck from "./lib/deck";
+import Player from "./lib/player";
 import * as origin from "./config/origin.json";
-
 
 const http = createServer();
 const io = new Server(http, {
@@ -97,12 +96,12 @@ io.on("connection", function (socket) {
   socket.on("getDeckCard", function () {
     socket.emit("setDeckCard", deck.deal(1));
   });
-  socket.on("setTable", function (data: { username: string, table: Card[][]}) {
+  socket.on("setTable", function (data: { username: string; table: Card[][] }) {
     let player = findPlayerByUsername(data.username);
     player.setTable(data.table);
     io.sockets.emit("setPlayers", players);
   });
-  socket.on("setHand", function (data: { username: string, hand: Card[]}) {
+  socket.on("setHand", function (data: { username: string; hand: Card[] }) {
     let player = findPlayerByUsername(data.username);
     if (player) {
       player.setHand(data.hand);
@@ -116,7 +115,7 @@ io.on("connection", function (socket) {
   socket.on("setDiscards", function (discards: Card[]) {
     io.sockets.emit("setDiscards", discards);
   });
-  socket.on("setScore", function (data: { username: string, score: number}) {
+  socket.on("setScore", function (data: { username: string; score: number }) {
     let player = findPlayerByUsername(data.username);
     player.addScore(data.score);
     io.sockets.emit("setPlayers", players);

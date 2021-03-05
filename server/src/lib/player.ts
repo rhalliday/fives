@@ -1,6 +1,6 @@
-import { Card } from './card';
+import Card from "./card";
 
-export class Player {
+export default class Player {
   socketId: string;
   username: string;
   table: Card[][];
@@ -43,4 +43,4 @@ export class Player {
       this.username.length > 0
     );
   }
-};
+}

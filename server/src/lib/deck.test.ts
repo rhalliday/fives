@@ -1,4 +1,5 @@
 import Deck from "./deck";
+import Card from "./card";
 
 test("generateDeck returns a deck of 52 cards", () => {
   let deck = new Deck(1);
@@ -26,7 +27,7 @@ test("shuffle reorders the deck", () => {
 test("can deal 1 card", () => {
   let deck = new Deck(1);
   let cards = deck.deal(1);
-  expect(cards[0]).toEqual({ rank: "A", suit: "H" });
+  expect(cards[0]).toEqual(new Card("A", "H"));
   expect(cards.length).toBe(1);
   expect(deck.deck.length).toBe(51);
 });
@@ -35,8 +36,8 @@ test("can deal 13 cards", () => {
   let deck = new Deck(1);
   let cards = deck.deal(13);
   expect(cards.length).toBe(13);
-  expect(cards[0]).toEqual({ rank: "A", suit: "H" });
-  expect(cards[12]).toEqual({ rank: "4", suit: "H" });
+  expect(cards[0]).toEqual(new Card("A", "H"));
+  expect(cards[12]).toEqual(new Card("4", "H"));
   expect(deck.deck.length).toBe(39);
 });
 

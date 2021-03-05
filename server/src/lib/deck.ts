@@ -1,7 +1,7 @@
-import { Card } from './card';
+import Card from "./card";
 
 // Deck for use in fives
-export class Deck {
+export default class Deck {
   packs: number;
   deck: Card[];
 
@@ -47,7 +47,7 @@ export class Deck {
       "K",
     ];
     return ranks
-      .map((r) => suits.map((s) => new Card(r,s)))
+      .map((r) => suits.map((s) => new Card(r, s)))
       .reduce((prev, curr) => prev.concat(curr));
   }
-};
+}
