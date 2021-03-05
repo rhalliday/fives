@@ -19,6 +19,8 @@ let currentPlayer = 0;
 let currentRound = 0;
 let gameStarted = false;
 
+const gameRoom = "game";
+
 function dealRound() {
   // TODO: increase the number of packs depending on the number of players
   deck = new Deck(2);
@@ -75,7 +77,8 @@ io.on("connection", function (socket) {
     }
     socket.emit("userSet", existingPlayer.username);
     socket.emit("setUserData", existingPlayer);
-    io.sockets.emit("setPlayers", players);
+    socket.join(gameRoom);
+    io.in(gameRoom).emit("setPlayers", players);
   });
 
   socket.on("startGame", function () {
@@ -99,7 +102,7 @@ io.on("connection", function (socket) {
   socket.on("setTable", function (data: { username: string; table: Card[][] }) {
     let player = findPlayerByUsername(data.username);
     player.setTable(data.table);
-    io.sockets.emit("setPlayers", players);
+    io.in(gameRoom).emit("setPlayers", players);
   });
   socket.on("setHand", function (data: { username: string; hand: Card[] }) {
     let player = findPlayerByUsername(data.username);
@@ -113,12 +116,12 @@ io.on("connection", function (socket) {
     sendMessage(message);
   });
   socket.on("setDiscards", function (discards: Card[]) {
-    io.sockets.emit("setDiscards", discards);
+    io.in(gameRoom).emit("setDiscards", discards);
   });
   socket.on("setScore", function (data: { username: string; score: number }) {
     let player = findPlayerByUsername(data.username);
     player.addScore(data.score);
-    io.sockets.emit("setPlayers", players);
+    io.in(gameRoom).emit("setPlayers", players);
   });
   socket.on("finishRound", function () {
     let losingPlayers = players.filter(
@@ -133,10 +136,10 @@ io.on("connection", function (socket) {
     currentPlayer = ++currentPlayer % players.length;
     if (players[currentPlayer].isValid()) {
       players = players.filter((player) => player.socketId.length > 0);
-      io.sockets.emit("setPlayers", players);
+      io.in(gameRoom).emit("setPlayers", players);
       currentPlayer = currentPlayer % players.length;
     }
-    io.sockets.emit("setCurrentPlayer", players[currentPlayer].username);
+    io.in(gameRoom).emit("setCurrentPlayer", players[currentPlayer].username);
     sendMessage("waiting for player to pick up");
   });
   socket.on("disconnect", function () {
@@ -147,7 +150,7 @@ io.on("connection", function (socket) {
         "A user disconnected: " + player.username + "(" + player.socketId + ")"
       );
       player.clearSocket();
-      io.sockets.emit("setPlayers", players);
+      io.in(gameRoom).emit("setPlayers", players);
     } else {
       console.log("unknown user left the game");
     }
