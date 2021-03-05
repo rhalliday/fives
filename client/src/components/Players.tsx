@@ -2,7 +2,15 @@ import React from "react";
 import ListGroup from "react-bootstrap/ListGroup";
 import PlayerDisplay from "./PlayerDisplay";
 
-function Players(props) {
+import { Player } from "../types/Player";
+
+type playerProps = {
+  players: Player[];
+  currentPlayer: string;
+  handleAddToGroup: Function;
+};
+
+function Players(props: playerProps) {
   let players = props.players;
   let playerList = players.map((player) => {
     return (

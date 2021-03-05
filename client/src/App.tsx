@@ -9,8 +9,10 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { socket } from "./service/socket";
 
-class App extends React.Component {
-  constructor(props) {
+
+
+class App extends React.Component<{}, {username: string }> {
+  constructor(props: any) {
     super(props);
     this.state = {
       username: "",
@@ -19,13 +21,14 @@ class App extends React.Component {
     this.HandleUpdateUsername = this.HandleUpdateUsername.bind(this);
   }
   componentDidMount() {
-    socket.on("userSet", (data) => this.setState({ username: data }));
+    socket.on("userSet", (data: string) => this.setState({ username: data }));
   }
-  HandleUpdateUsername(username) {
-    this.username = username;
+  HandleUpdateUsername(username: string) {
+    let strippedName = username.substring(0, 10);
+    this.setState({ username: strippedName});
   }
   HandleSetUsername() {
-    socket.emit("setUsername", this.username);
+    socket.emit("setUsername", this.state.username);
   }
   render() {
     return (

@@ -5,9 +5,17 @@ import ListGroup from "react-bootstrap/ListGroup";
 import Col from "react-bootstrap/Col";
 import Card from "./Card";
 
-function Table(props) {
+import { Card as CardT } from "../types/Card";
+
+type tableProps = {
+  className?: string;
+  groupClickHandler: Function;
+  cards: CardT[][];
+};
+
+function Table(props: tableProps) {
   let className = "Card-parent " + props.className;
-  let displayCards = (cards, groupIndex) => {
+  let displayCards = (cards: CardT[], groupIndex: number) => {
     return cards.map((card, index) => {
       return (
         <ListGroup.Item
