@@ -1,8 +1,15 @@
-import React from "react";
+import React, { MouseEventHandler } from "react";
 
 import { getImageLocation, getCardImageName } from "./Utils";
+import { Card as CardT } from "../types/Card";
 
-function Card(props) {
+type cardProps = {
+  card: CardT;
+  className?: string;
+  onClick?: MouseEventHandler;
+};
+
+function Card(props: cardProps) {
   let imageName = getCardImageName(props.card);
   let className = "Card " + props.className;
   return (

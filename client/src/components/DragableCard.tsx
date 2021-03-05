@@ -1,16 +1,28 @@
-import React, { useRef } from "react";
-import { useDrag, useDrop } from "react-dnd";
+import React, { MouseEventHandler, useRef } from "react";
+import { useDrag, useDrop, DragObjectWithType } from "react-dnd";
 
 import { ItemTypes } from "../Constants";
 import Card from "./Card";
+import { Card as CardT } from "../types/Card";
 
-function DragableCard(props) {
+type dcProps = {
+  index: number;
+  moveCard: Function;
+  clickCard: MouseEventHandler;
+  card: CardT;
+};
+
+type hoverItem = DragObjectWithType & {
+  index: number;
+};
+
+function DragableCard(props: dcProps) {
   const index = props.index;
   const moveCard = props.moveCard;
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
-    hover(item, monitor) {
+    hover(item: hoverItem, monitor) {
       if (!ref.current) {
         return;
       }
@@ -27,6 +39,9 @@ function DragableCard(props) {
         (hoverBoundingRect.right - hoverBoundingRect.left) / 2;
       // Determine mouse position
       const clientOffset = monitor.getClientOffset();
+      if (clientOffset === null) {
+        return;
+      }
       // Get pixels to the top
       const hoverClientX = clientOffset.x - hoverBoundingRect.left;
       // Dragging right

@@ -1,4 +1,3 @@
-import { test } from "picomatch";
 import { isBlackTwo, sameRank, isStraight, validator, score } from "./fives";
 
 test("isBlackTwo identifies the 2 of clubs", () => {

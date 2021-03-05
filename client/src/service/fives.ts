@@ -1,36 +1,50 @@
-function getOrder(card, acesHigh = true) {
+import { Card } from "../types/Card";
+
+function cardValue(card: Card, cardValues: { A: number, J: number, Q: number, K: number }) {
+  if (card.rank in cardValues) {
+    return cardValues[card.rank as keyof typeof cardValues];
+  }
+  return parseInt(card.rank, 10);
+}
+
+function getOrder(card: Card, acesHigh:boolean = true) {
   let cardValues = {
     A: acesHigh ? 14 : 1,
     J: 11,
     Q: 12,
     K: 13,
   };
-  return cardValues[card.rank]
-    ? cardValues[card.rank]
-    : parseInt(card.rank, 10);
+  return cardValue(card, cardValues);
 }
 
-function getInitialCard(cards) {
+function getInitialCard(cards: Card[]) {
   let initialCard = cards.shift();
-  while (isBlackTwo(initialCard)) {
+  while (initialCard && isBlackTwo(initialCard)) {
     initialCard = cards.shift();
   }
   return initialCard;
 }
 
-export function isBlackTwo(card) {
+export function isBlackTwo(card: Card) {
   return card.rank === "2" && (card.suit === "C" || card.suit === "S");
 }
 
-export function sameRank(cards) {
-  let expected_rank = getInitialCard(cards).rank;
+export function sameRank(cards: Card[]) {
+  let initialCard = getInitialCard(cards);
+  if (!initialCard) {
+    return false;
+  }
+  let expected_rank = initialCard.rank;
   return cards.every((card) => {
     return card.rank === expected_rank || isBlackTwo(card);
   });
 }
 
-export function isStraight(cards) {
+export function isStraight(cards: Card[]) {
   let initialCard = getInitialCard(cards);
+  if (!initialCard) {
+    return false;
+  }
   let cardValue = getOrder(initialCard, false);
   let suit = initialCard.suit;
   return cards.every((card) => {
@@ -42,7 +56,7 @@ export function isStraight(cards) {
 }
 
 // are the group of cards valid
-export function validator(cardsOriginal) {
+export function validator(cardsOriginal: Card[]) {
   // make a copy so that we can mess with it
   let cards = [...cardsOriginal];
   if (cards.length < 3) return false;
@@ -52,19 +66,17 @@ export function validator(cardsOriginal) {
   return isStraight(cards);
 }
 
-function getValue(card) {
+function getValue(card: Card) {
   let cardValues = {
     A: 15,
     J: 10,
     Q: 10,
     K: 10,
   };
-  return cardValues[card.rank]
-    ? cardValues[card.rank]
-    : parseInt(card.rank, 10);
+  return cardValue(card, cardValues);
 }
 
-export function score(cards) {
+export function score(cards: Card[]) {
   let score = 0,
     multipliers = 0;
   cards.forEach((card) => {

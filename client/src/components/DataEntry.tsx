@@ -1,10 +1,16 @@
-import React from "react";
+import React, { MouseEventHandler } from "react";
 import Button from "react-bootstrap/Button";
 import Col from "react-bootstrap/Col";
 import Row from "react-bootstrap/Row";
 import Form from "react-bootstrap/Form";
 
-function DataEntry(props) {
+type dataEntryProps = {
+  className: string,
+  handleUpdateUsername: Function,
+  handleSetUsername: MouseEventHandler
+}
+
+function DataEntry(props: dataEntryProps) {
   return (
     <>
       <Col>

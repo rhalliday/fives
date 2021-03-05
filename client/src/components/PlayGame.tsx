@@ -9,9 +9,30 @@ import Deck from "./Deck";
 import { validator, score } from "../service/fives";
 import { socket } from "../service/socket";
 import { ROUND_RULES, TIME_TO_SHUFFLE } from "../Constants";
+import { Player } from "../types/Player";
+import { Card } from "../types/Card";
 
-class PlayGame extends React.Component {
-  constructor(props) {
+type gameProps = {
+  className: string,
+  username: string
+}
+
+type gameState = {
+  players: Player[],
+  cards: Card[],
+  table: Card[][],
+  canStartGame: boolean,
+  currentPlayer: string,
+  hasSelectedCard: boolean,
+  currentRound: number,
+  canLay: boolean,
+  hasGoneDown: boolean,
+  discards: Card[],
+  message: string
+}
+
+class PlayGame extends React.Component<gameProps, gameState> {
+  constructor(props: gameProps) {
     super(props);
     this.state = {
       players: [],
@@ -39,7 +60,7 @@ class PlayGame extends React.Component {
   }
 
   componentDidMount() {
-    socket.on("setPlayers", (gamePlayers) => {
+    socket.on("setPlayers", (gamePlayers: Player[]) => {
       let canStartGame =
         gamePlayers[0].username === this.props.username &&
         this.state.currentRound === 0;
@@ -49,7 +70,7 @@ class PlayGame extends React.Component {
       });
     });
 
-    socket.on("dealtCards", (data) => {
+    socket.on("dealtCards", (data: {cards: Card[], discards: Card[], currentRound: number}) => {
       this.setState({
         cards: data.cards,
         discards: data.discards,
@@ -59,18 +80,18 @@ class PlayGame extends React.Component {
       });
     });
 
-    socket.on("setDeckCard", (card) => {
+    socket.on("setDeckCard", (card: Card[]) => {
       let cards = this.state.cards;
       cards.push(card[0]);
       this.setState({ cards: cards });
       socket.emit("setHand", { username: this.props.username, hand: cards });
     });
 
-    socket.on("setDiscards", (discards) => {
+    socket.on("setDiscards", (discards: Card[]) => {
       this.setState({ discards: discards });
     });
 
-    socket.on("setCurrentPlayer", (currentPlayer) => {
+    socket.on("setCurrentPlayer", (currentPlayer: string) => {
       this.setState({ currentPlayer: currentPlayer });
     });
 
@@ -80,16 +101,16 @@ class PlayGame extends React.Component {
         score: score(this.state.cards),
       });
     });
-    socket.on("setUserData", (data) => {
+    socket.on("setUserData", (data: { hand: Card[]}) => {
       this.setState({
         cards: data.hand,
       });
     });
-    socket.on("setMessage", (message) => {
+    socket.on("setMessage", (message: string) => {
       this.setState({ message: message });
     });
   }
-  sendMessage(message) {
+  sendMessage(message: string) {
     socket.emit("sendMessage", message);
   }
   canClickCard() {
@@ -101,7 +122,7 @@ class PlayGame extends React.Component {
   HandleStartGame() {
     socket.emit("startGame");
   }
-  HandleMoveCard(dragIndex, hoverIndex) {
+  HandleMoveCard(dragIndex: number, hoverIndex: number) {
     let cards = this.state.cards;
     const dragCard = cards.splice(dragIndex, 1);
     cards.splice(hoverIndex, 0, dragCard[0]);
@@ -117,13 +138,16 @@ class PlayGame extends React.Component {
     if (!this.canClickCard()) return;
     let discards = this.state.discards;
     let cards = this.state.cards;
-    cards.push(discards.pop());
-    this.setState({ cards: cards, discards: discards, hasSelectedCard: true });
-    socket.emit("setHand", { username: this.props.username, hand: cards });
-    socket.emit("setDiscards", discards);
-    this.sendMessage("card selected from discard");
+    let card = discards.pop();
+    if (card) {
+      cards.push(card);
+      this.setState({ cards: cards, discards: discards, hasSelectedCard: true });
+      socket.emit("setHand", { username: this.props.username, hand: cards });
+      socket.emit("setDiscards", discards);
+      this.sendMessage("card selected from discard");
+    }
   }
-  HandleClickedCard(cardIndex) {
+  HandleClickedCard(cardIndex: number) {
     let cards = this.state.cards;
     cards[cardIndex].selected = !cards[cardIndex].selected;
     this.setState({ cards: cards });
@@ -166,19 +190,22 @@ class PlayGame extends React.Component {
   }
   HandleUndoCardLay() {
     // put the cards back in my hand
-    let tableCards = this.state.table.shift().map((card) => {
-      card.selected = false;
-      return card;
-    });
-    let cards = this.state.cards.concat(tableCards);
-    this.setState({ table: [], cards: cards });
-    socket.emit("setHand", { username: this.props.username, hand: cards });
-    socket.emit("setTable", {
-      username: this.props.username,
-      table: [],
-    });
+    let pickupCards = this.state.table.shift();
+    if (pickupCards) {
+      let tableCards = pickupCards.map((card) => {
+        card.selected = false;
+        return card;
+      });
+      let cards = this.state.cards.concat(tableCards);
+      this.setState({ table: [], cards: cards });
+      socket.emit("setHand", { username: this.props.username, hand: cards });
+      socket.emit("setTable", {
+        username: this.props.username,
+        table: [],
+      });
+    }
   }
-  updateMyTable(currentTable) {
+  updateMyTable(currentTable: Card[][]) {
     let cards = this.state.cards.filter((card) => !card.selected);
     this.setState({ table: currentTable, cards: cards });
     socket.emit("setHand", { username: this.props.username, hand: cards });
@@ -187,7 +214,7 @@ class PlayGame extends React.Component {
       table: currentTable,
     });
   }
-  HandleAddToTableGroup(groupIndex) {
+  HandleAddToTableGroup(groupIndex: number) {
     if (this.state.cards.length < 2) return;
     let cardGroup = this.selectedCards();
     let table = this.state.table;
@@ -199,7 +226,7 @@ class PlayGame extends React.Component {
       this.updateMyTable(table);
     }
   }
-  HandleAddToOtherTable(groupIndex, otherPlayer) {
+  HandleAddToOtherTable(groupIndex: number, otherPlayer: Player) {
     if (this.state.cards.length < 2) return;
     let cardGroup = this.selectedCards();
     let table = otherPlayer.table;
@@ -220,7 +247,7 @@ class PlayGame extends React.Component {
       socket.emit("updateUserTable", otherPlayer);
     }
   }
-  addToGroup(cardGroup, selectedGroup) {
+  addToGroup(cardGroup: Card[], selectedGroup: Card[]) {
     // if we havn't gone down yet, we can't lay cards
     if (!this.state.hasGoneDown) {
       return [];

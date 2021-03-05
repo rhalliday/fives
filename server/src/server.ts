@@ -1,22 +1,25 @@
-const server = require("express")();
-const http = require("http").createServer(server);
-const clientServer = process.env["CLIENT_SERVER"] || "localhost";
-const clientPort = process.env["CLIENT_PORT"] || "3000";
-const io = require("socket.io")(http, {
+import { createServer } from "http";
+import { Server, Socket } from "socket.io";
+import Card from "./lib/card";
+import Deck from "./lib/deck";
+import Player from "./lib/player";
+import * as origin from "./config/origin.json";
+
+const http = createServer();
+const io = new Server(http, {
   cors: {
-    origin: "http://" + clientServer + ":" + clientPort,
+    origin: "http://" + origin.server + ":" + origin.port,
     methods: ["GET", "POST"],
   },
 });
 
-const Deck = require("./lib/deck");
-const Player = require("./lib/player");
-
-let players = [];
-let deck;
+let players: Player[] = [];
+let deck: Deck;
 let currentPlayer = 0;
 let currentRound = 0;
 let gameStarted = false;
+
+const gameRoom = "game";
 
 function dealRound() {
   // TODO: increase the number of packs depending on the number of players
@@ -45,17 +48,17 @@ function dealRound() {
   currentRound++;
 }
 
-function sendMessage(message) {
+function sendMessage(message: string) {
   io.sockets.emit("setMessage", message);
 }
 
-function findPlayerByUsername(username) {
+function findPlayerByUsername(username: string) {
   return players.find((player) => player.username === username);
 }
 
 io.on("connection", function (socket) {
   console.log("A user connected: " + socket.id);
-  socket.on("setUsername", function (data) {
+  socket.on("setUsername", function (data: string) {
     let existingPlayer = findPlayerByUsername(data);
     if (existingPlayer) {
       if (gameStarted) {
@@ -74,7 +77,8 @@ io.on("connection", function (socket) {
     }
     socket.emit("userSet", existingPlayer.username);
     socket.emit("setUserData", existingPlayer);
-    io.sockets.emit("setPlayers", players);
+    socket.join(gameRoom);
+    io.in(gameRoom).emit("setPlayers", players);
   });
 
   socket.on("startGame", function () {
@@ -95,12 +99,12 @@ io.on("connection", function (socket) {
   socket.on("getDeckCard", function () {
     socket.emit("setDeckCard", deck.deal(1));
   });
-  socket.on("setTable", function (data) {
+  socket.on("setTable", function (data: { username: string; table: Card[][] }) {
     let player = findPlayerByUsername(data.username);
     player.setTable(data.table);
-    io.sockets.emit("setPlayers", players);
+    io.in(gameRoom).emit("setPlayers", players);
   });
-  socket.on("setHand", function (data) {
+  socket.on("setHand", function (data: { username: string; hand: Card[] }) {
     let player = findPlayerByUsername(data.username);
     if (player) {
       player.setHand(data.hand);
@@ -108,16 +112,16 @@ io.on("connection", function (socket) {
       console.log("Unable to find user: " + data.username);
     }
   });
-  socket.on("sendMessage", function (message) {
+  socket.on("sendMessage", function (message: string) {
     sendMessage(message);
   });
-  socket.on("setDiscards", function (discards) {
-    io.sockets.emit("setDiscards", discards);
+  socket.on("setDiscards", function (discards: Card[]) {
+    io.in(gameRoom).emit("setDiscards", discards);
   });
-  socket.on("setScore", function (data) {
+  socket.on("setScore", function (data: { username: string; score: number }) {
     let player = findPlayerByUsername(data.username);
     player.addScore(data.score);
-    io.sockets.emit("setPlayers", players);
+    io.in(gameRoom).emit("setPlayers", players);
   });
   socket.on("finishRound", function () {
     let losingPlayers = players.filter(
@@ -132,21 +136,21 @@ io.on("connection", function (socket) {
     currentPlayer = ++currentPlayer % players.length;
     if (players[currentPlayer].isValid()) {
       players = players.filter((player) => player.socketId.length > 0);
-      io.sockets.emit("setPlayers", players);
+      io.in(gameRoom).emit("setPlayers", players);
       currentPlayer = currentPlayer % players.length;
     }
-    io.sockets.emit("setCurrentPlayer", players[currentPlayer].username);
+    io.in(gameRoom).emit("setCurrentPlayer", players[currentPlayer].username);
     sendMessage("waiting for player to pick up");
   });
   socket.on("disconnect", function () {
     // allow the player to reconnect with the same username but a different socketId
-    player = players.find((player) => player.socketId === socket.id);
+    let player = players.find((player) => player.socketId === socket.id);
     if (player) {
       console.log(
         "A user disconnected: " + player.username + "(" + player.socketId + ")"
       );
       player.clearSocket();
-      io.sockets.emit("setPlayers", players);
+      io.in(gameRoom).emit("setPlayers", players);
     } else {
       console.log("unknown user left the game");
     }

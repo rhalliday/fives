@@ -1,12 +1,18 @@
+import Card from "./card";
+
 // Deck for use in fives
-module.exports = class Deck {
-  constructor(packs) {
+export default class Deck {
+  packs: number;
+  deck: Card[];
+
+  constructor(packs: number) {
     this.packs = packs;
     this.deck = [];
     for (let count = 0; count < this.packs; count++) {
       this.deck = this.deck.concat(this.generatePack());
     }
   }
+
   // shuffles the cards in the deck
   shuffle() {
     for (let i = this.deck.length - 1; i > 0; i--) {
@@ -16,7 +22,7 @@ module.exports = class Deck {
   }
 
   // deals the number of cards that were asked for
-  deal(numCards) {
+  deal(numCards: number) {
     if (this.deck.length < numCards) {
       throw new Error("Not enough cards");
     }
@@ -41,7 +47,7 @@ module.exports = class Deck {
       "K",
     ];
     return ranks
-      .map((r) => suits.map((s) => ({ rank: r, suit: s, selected: false })))
+      .map((r) => suits.map((s) => new Card(r, s)))
       .reduce((prev, curr) => prev.concat(curr));
   }
-};
+}
