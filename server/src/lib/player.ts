@@ -6,6 +6,9 @@ export default class Player {
   table: Card[][];
   hand: Card[];
   score: number;
+  canStartGame: boolean;
+  canGoDown: boolean;
+  hasGoneDown: boolean;
 
   constructor(socketId: string, username: string) {
     this.socketId = socketId;
@@ -13,6 +16,9 @@ export default class Player {
     this.table = [];
     this.hand = [];
     this.score = 0;
+    this.canStartGame = false;
+    this.canGoDown = false;
+    this.hasGoneDown = false;
   }
 
   clearSocket() {
