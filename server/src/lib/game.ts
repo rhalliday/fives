@@ -1,8 +1,11 @@
-import Deck from "./deck";
-import Player from "./player";
-import Players from "./players";
-import Card from "./card";
-import { Server, Socket } from "socket.io";
+import Deck from "./cards/deck";
+import Player from "./players/player";
+import Players from "./players/players";
+import Card from "./cards/card";
+import { Socket } from "socket.io";
+import SocketAdaptor from "./socketAdapter";
+import Rule from "./rules/rule";
+import Rules from "./rules/rules";
 
 const TIME_TO_SHUFFLE = 10_000;
 
@@ -10,21 +13,23 @@ export default class Game {
   players: Players;
   deck: Deck;
   discards: Card[];
-  currentRound: number;
-  io: Server;
-  gameRoom: string;
+  currentRound: Rule;
+  rules: Rules;
+  io: SocketAdaptor;
   currentPlayer: Player;
   gameStarted: boolean;
+  allPlayersHavePlayed: boolean;
 
-  constructor(io: Server, gameRoom: string) {
-    this.players = new Players(io, this.error, gameRoom);
-    this.currentRound = 0;
+  constructor(io: SocketAdaptor) {
+    this.players = new Players(io, this.error);
+    this.rules = new Rules();
+    this.currentRound = this.rules.next();
     this.io = io;
-    this.gameRoom = gameRoom;
     this.gameStarted = false;
+    this.allPlayersHavePlayed = false;
   }
 
-  addPlayer(username: string, socket: Socket) {
+  addPlayer(username: string, socket: Socket, gameRoom: string) {
     let existingPlayer = this.players.findPlayerByUsername(username);
     if (existingPlayer) {
       if (this.gameStarted) {
@@ -44,13 +49,15 @@ export default class Game {
     // TODO: consolidate userSet and setUserData
     socket.emit("userSet", existingPlayer.username);
     socket.emit("setUserData", existingPlayer);
-    socket.join(this.gameRoom);
+    socket.join(gameRoom);
     this.players.sendPlayers();
   }
 
   startGame() {
     this.players.shuffle();
-    this.currentRound = 0;
+    this.players.setAllPlayers(
+      (player: Player) => (player.canStartGame = false)
+    );
     this.gameStarted = true;
     this.dealRound();
   }
@@ -60,10 +67,14 @@ export default class Game {
     this.deck = new Deck(2);
     this.deck.shuffle();
     this.discards = this.deck.deal(1);
-    this.players.setIterator(this.currentRound);
+    this.players.setAllPlayers((player: Player) => {
+      player.hasGoneDown = false;
+      player.canGoDown = false;
+    });
+    this.players.setIterator(this.rules.currentRule);
     this.players.dealCards(this.deck, this.discards, this.currentRound);
     this.sendMessage("waiting for player to pick up");
-    this.currentRound++;
+    this.allPlayersHavePlayed = false;
   }
 
   dealCard() {
@@ -87,21 +98,27 @@ export default class Game {
 
   setDiscards(discards: Card[]) {
     this.discards = discards;
-    this.io.in(this.gameRoom).emit("setDiscards", discards);
+    this.io.updateGameRoom("setDiscards", discards);
   }
 
   sendMessage(message: string) {
-    this.io.in(this.gameRoom).emit("setMessage", message);
+    this.io.updateGameRoom("setMessage", message);
   }
 
   finishRound() {
     this.players.updateScores();
-    setTimeout(this.dealRound, TIME_TO_SHUFFLE);
+    if (this.rules.hasNext()) {
+      setTimeout(this.dealRound, TIME_TO_SHUFFLE);
+    }
   }
 
   nextPlayer() {
     this.players.sendCurrentPlayer();
     this.sendMessage("waiting for player to pick up");
+    if (!this.allPlayersHavePlayed && this.players.allPlayersHavePlayed()) {
+      this.allPlayersHavePlayed = true;
+      this.players.setAllPlayers((player: Player) => (player.canGoDown = true));
+    }
   }
 
   disconnectPlayer(socketId: string) {

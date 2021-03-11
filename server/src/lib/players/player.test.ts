@@ -1,5 +1,5 @@
 import Player from "./player";
-import Card from "./card";
+import Card from "../cards/card";
 
 let player: Player;
 

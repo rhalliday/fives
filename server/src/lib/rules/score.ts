@@ -1,4 +1,4 @@
-import Card from "./card";
+import Card from "../cards/card";
 
 function cardValue(
   card: Card,

@@ -1,26 +1,38 @@
-import { Server } from "socket.io";
-import Card from "./card";
-import Deck from "./deck";
+import Card from "../cards/card";
+import Deck from "../cards/deck";
 import Player from "./player";
-import score from "./score";
+import score from "../rules/score";
+import SocketAdaptor from "../socketAdapter";
+import Rule from "../rules/rule";
 
 export default class Players {
   players: Player[];
-  io: Server;
+  io: SocketAdaptor;
   errorHandler: Function;
   currentPos: number;
-  gameRoom: string;
+  numPlayed: number;
 
-  constructor(io: Server, errorHandler: Function, gameRoom: string) {
-    this.gameRoom = gameRoom;
+  constructor(io: SocketAdaptor, errorHandler: Function) {
     this.players = [];
     this.io = io;
     this.errorHandler = errorHandler;
     this.currentPos = 0;
+    this.numPlayed = 0;
   }
 
   addPlayer(player: Player) {
+    if (this.players.length === 0) {
+      player.canStartGame = true;
+    }
     this.players.push(player);
+  }
+
+  allPlayersHavePlayed() {
+    return this.numPlayed >= this.players.length;
+  }
+
+  setAllPlayers(modifyCB: Function) {
+    this.players.forEach((player) => modifyCB(player));
   }
 
   setIterator(startPos: number) {
@@ -29,6 +41,7 @@ export default class Players {
   nextPlayer() {
     // get next player
     let player = this.players[this.currentPos++ % this.players.length];
+    this.numPlayed++;
     // if the player is valid return it, otherwise return the next valid player
     if (player.isValid()) {
       return player;
@@ -36,26 +49,25 @@ export default class Players {
     // make sure that we have valid players
     if (this.players.find((p) => p.isValid()) === undefined) {
       this.errorHandler("There are no valid players");
+      return;
     }
     // loop round till we find the next player
     while (!player.isValid()) {
       player = this.players[this.currentPos++ % this.players.length];
+      this.numPlayed++;
     }
     return player;
   }
-  dealCards(deck: Deck, discards: Card[], currentRound: number) {
-    let sockets = this.io.of("/").sockets;
+  dealCards(deck: Deck, discards: Card[], currentRound: Rule) {
+    this.numPlayed = 0;
+    this.io.updateSockets();
     this.players.forEach((player) => {
-      if (sockets.has(player.socketId)) {
-        player.setHand(deck.deal(13));
-        sockets.get(player.socketId).emit("dealtCards", {
-          cards: player.hand,
-          discards: discards,
-          currentRound: currentRound,
-        });
-      } else {
-        console.log("Could not find socket " + player.socketId);
-      }
+      player.setHand(deck.deal(13));
+      this.io.sendSingle(player.socketId, "dealtCards", {
+        cards: player.hand,
+        discards: discards,
+        currentRound: currentRound,
+      });
       // make sure the players details have been reset
       player.setTable([]);
     });
@@ -64,12 +76,12 @@ export default class Players {
   }
 
   sendPlayers() {
-    this.io.in(this.gameRoom).emit("setPlayers", this.players);
+    this.io.updateGameRoom("setPlayers", this.players);
   }
 
   sendCurrentPlayer() {
     let currentPlayer = this.nextPlayer();
-    this.io.in(this.gameRoom).emit("setCurrentPlayer", currentPlayer.username);
+    this.io.updateGameRoom("setCurrentPlayer", currentPlayer.username);
   }
 
   findPlayerByUsername(username: string) {

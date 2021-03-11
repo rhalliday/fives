@@ -1,5 +1,5 @@
 import score from "./score";
-import Card from "./card";
+import Card from "../cards/card";
 
 test("score handles face and unit cards", () => {
   let cards = [

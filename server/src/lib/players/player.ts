@@ -1,4 +1,4 @@
-import Card from "./card";
+import Card from "../cards/card";
 
 export default class Player {
   socketId: string;
@@ -30,6 +30,7 @@ export default class Player {
   }
 
   setTable(table: Card[][]) {
+    this.hasGoneDown = true;
     this.table = table;
   }
 

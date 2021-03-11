@@ -1,8 +1,9 @@
 import { createServer } from "http";
 import { Server, Socket } from "socket.io";
-import Card from "./lib/card";
+import Card from "./lib/cards/card";
 import * as origin from "./config/origin.json";
 import Game from "./lib/game";
+import SocketAdaptor from "./lib/socketAdapter";
 
 const http = createServer();
 const io = new Server(http, {
@@ -12,13 +13,21 @@ const io = new Server(http, {
   },
 });
 
-const game: Game = new Game(io, "game");
+const gameRoom = "game";
+
+const socketAdapter = new SocketAdaptor(
+  (type: string, data: any) => io.in(gameRoom).emit(type, data),
+  () => io.of("/").sockets,
+  (socket: Socket, type: string, data: any) => socket.emit(type, data)
+);
+
+const game: Game = new Game(socketAdapter);
 
 io.on("connection", function (socket: Socket) {
   console.log("A user connected: " + socket.id);
 
   socket.on("setUsername", (username: string) =>
-    game.addPlayer(username, socket)
+    game.addPlayer(username, socket, gameRoom)
   );
   socket.on("startGame", () => game.startGame());
   socket.on("nextRound", () => game.dealRound());
