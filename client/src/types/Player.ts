@@ -5,5 +5,9 @@ export type Player = {
   username: string;
   table: Card[][];
   hand: Card[];
-  score: number
-}
+  score: number;
+  canStartGame: boolean;
+  canGoDown: boolean;
+  hasGoneDown: boolean;
+  hasDrawn: boolean;
+};

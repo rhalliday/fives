@@ -1,45 +1,29 @@
 import Player from "./player";
 import Players from "./players";
-import SocketAdaptor from "../socketAdapter";
 import Card from "../cards/card";
 import Deck from "../cards/deck";
-import Rule from "../rules/rule";
+import GameRoomUpdater from "../test/gameRoomUpdater";
 
-let socketAdapter: SocketAdaptor;
 let players: Players;
-type roomUpdateType = { type: string; data: any };
-let roomUpdates: roomUpdateType[];
 let expectedPlayers: Map<String, Player>;
-let messagedSockets: string[];
 let errorMessage: string;
+let playerSockets: string[];
+let gameRoomUpdater: GameRoomUpdater;
 
 const setPlayerType = "setPlayers";
 const setCurrentPlayerType = "setCurrentPlayer";
 
 beforeEach(() => {
-  messagedSockets = [];
-  roomUpdates = [];
+  playerSockets = ["sock1", "sock2", "sock3", "sock4"];
   expectedPlayers = new Map([
-    ["sock1", new Player("sock1", "rob")],
-    ["sock2", new Player("sock2", "jen")],
-    ["sock3", new Player("sock3", "amb")],
-    ["sock4", new Player("sock4", "imo")],
+    [playerSockets[0], new Player(playerSockets[0], "rob")],
+    [playerSockets[1], new Player(playerSockets[1], "jen")],
+    [playerSockets[2], new Player(playerSockets[2], "amb")],
+    [playerSockets[3], new Player(playerSockets[3], "imo")],
   ]);
-  socketAdapter = new SocketAdaptor(
-    (type: string, data: any) => {
-      roomUpdates.push({ type: type, data: data });
-    },
-    () => expectedPlayers,
-    (key: string, type: string, data: any) => {
-      messagedSockets.push(key);
-      expect(type).toEqual("dealtCards");
-      expect(data.cards).toBeDefined();
-      expect(data.discards).toBeDefined();
-      expect(data.currentRound).toBeDefined();
-    }
-  );
+  gameRoomUpdater = new GameRoomUpdater();
   players = new Players(
-    socketAdapter,
+    gameRoomUpdater.getRoomUpdateFunction(),
     (message: string) => (errorMessage = message)
   );
 
@@ -56,6 +40,7 @@ test("All players have played returns true when all players have played", () => 
     expect(players.allPlayersHavePlayed()).toBeFalsy();
     players.nextPlayer();
   });
+  players.nextPlayer();
   expect(players.allPlayersHavePlayed()).toBeTruthy();
   players.nextPlayer();
   expect(players.allPlayersHavePlayed()).toBeTruthy();
@@ -69,7 +54,7 @@ test("Set all players", () => {
 });
 
 test("Set iterator", () => {
-  players.setIterator(1);
+  players.setIterator(2);
   let p = players.nextPlayer();
   expect(p.socketId).toEqual("sock2");
 });
@@ -92,8 +77,8 @@ describe("nextPlayer", () => {
     players.setAllPlayers((player: Player) => {
       player.clearSocket();
     });
-    players.players[0].socketId = "sock7";
-    players.players[players.players.length - 1].socketId = "sock8";
+    players.players[0].setSocket("sock7");
+    players.players[players.players.length - 1].setSocket("sock8");
     let p = players.nextPlayer();
     expect(p.socketId).toEqual("sock7");
     p = players.nextPlayer();
@@ -105,19 +90,19 @@ describe("nextPlayer", () => {
 
 test("sendPlayers sends the players to the room", () => {
   players.sendPlayers();
-  let roomUpdate = roomUpdates.pop();
-  expect(roomUpdate.type).toEqual(setPlayerType);
+  let roomUpdate = gameRoomUpdater.getRoomUpdate();
+  expect(roomUpdate.nsp).toEqual(setPlayerType);
   expect(roomUpdate.data).toBe(players.players);
 });
 
 test("sendCurrentPlayer sends the currentPlayer to the room", () => {
   players.sendCurrentPlayer();
-  let roomUpdate = roomUpdates.pop();
-  expect(roomUpdate.type).toEqual(setCurrentPlayerType);
+  let roomUpdate = gameRoomUpdater.getRoomUpdate();
+  expect(roomUpdate.nsp).toEqual(setCurrentPlayerType);
   expect(roomUpdate.data).toEqual(players.players[0].username);
   players.sendCurrentPlayer();
-  roomUpdate = roomUpdates.pop();
-  expect(roomUpdate.type).toEqual(setCurrentPlayerType);
+  roomUpdate = gameRoomUpdater.getRoomUpdate();
+  expect(roomUpdate.nsp).toEqual(setCurrentPlayerType);
   expect(roomUpdate.data).toEqual(players.players[1].username);
 });
 
@@ -152,8 +137,8 @@ test("updating users scores", () => {
   // assign the hands to the players
   players.players.forEach((player) => player.setHand(hands.shift()));
   players.updateScores();
-  let roomUpdate = roomUpdates.pop();
-  expect(roomUpdate.type).toEqual(setPlayerType);
+  let roomUpdate = gameRoomUpdater.getRoomUpdate();
+  expect(roomUpdate.nsp).toEqual(setPlayerType);
   roomUpdate.data.forEach((player: Player) =>
     expect(player.score).toEqual(expectedScores.shift())
   );
@@ -163,43 +148,29 @@ test("updating users scores", () => {
 describe("deal cards", () => {
   test("deal with everyone there", () => {
     const deck = new Deck(2);
-    const discards = deck.deal(1);
-    const rule = new Rule(1, 3, "One Three");
     players.setAllPlayers((p: Player) => p.setTable([[new Card("A", "S")]]));
-    players.dealCards(deck, discards, rule);
-    expect(messagedSockets.length).toEqual(players.players.length);
-    const distinctArray = messagedSockets.filter(
-      (n, i) => messagedSockets.indexOf(n) === i
-    );
-    expect(distinctArray.length).toEqual(players.players.length);
+    players.dealCards(deck);
     const emptyHand = players.players.filter((p) => p.hand.length === 0);
     expect(emptyHand.length).toEqual(0);
     const tables = players.players.filter((p) => p.table.length > 0);
     expect(tables.length).toEqual(0);
-    let roomUpdate = roomUpdates.shift();
-    expect(roomUpdate.type).toEqual(setPlayerType);
-    roomUpdate = roomUpdates.shift();
-    expect(roomUpdate.type).toEqual(setCurrentPlayerType);
+    let roomUpdate = gameRoomUpdater.getRoomUpdate();
+    expect(roomUpdate.nsp).toEqual(setPlayerType);
+    roomUpdate = gameRoomUpdater.getRoomUpdate();
+    expect(roomUpdate.nsp).toEqual(setCurrentPlayerType);
   });
   test("deal with someone missing", () => {
     const deck = new Deck(2);
-    const discards = deck.deal(1);
-    const rule = new Rule(1, 3, "One Three");
     players.players[0].clearSocket();
-    players.dealCards(deck, discards, rule);
-    expect(messagedSockets.length).toEqual(players.players.length - 1);
-    const distinctArray = messagedSockets.filter(
-      (n, i) => messagedSockets.indexOf(n) === i
-    );
-    expect(distinctArray.length).toEqual(players.players.length - 1);
+    players.dealCards(deck);
     const emptyHand = players.players.filter((p) => p.hand.length === 0);
     expect(emptyHand.length).toEqual(0);
     const tables = players.players.filter((p) => p.table.length > 0);
     expect(tables.length).toEqual(0);
-    let roomUpdate = roomUpdates.shift();
-    expect(roomUpdate.type).toEqual(setPlayerType);
-    roomUpdate = roomUpdates.shift();
-    expect(roomUpdate.type).toEqual(setCurrentPlayerType);
+    let roomUpdate = gameRoomUpdater.getRoomUpdate();
+    expect(roomUpdate.nsp).toEqual(setPlayerType);
+    roomUpdate = gameRoomUpdater.getRoomUpdate();
+    expect(roomUpdate.nsp).toEqual(setCurrentPlayerType);
   });
 });
 
@@ -207,4 +178,13 @@ test("shuffle doesn't remove/add any players", () => {
   const numPlayers = players.players.length;
   players.shuffle();
   expect(players.players.length).toEqual(numPlayers);
+});
+
+test("get winner", () => {
+  players.players[0].score = 5;
+  players.players[1].score = 10;
+  players.players[2].score = 2;
+  players.players[3].score = 100;
+  const winner = players.getWinner();
+  expect(winner).toBe(players.players[2]);
 });

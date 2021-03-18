@@ -9,12 +9,13 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { socket } from "./service/socket";
 
-class App extends React.Component<{}, { username: string }> {
+class App extends React.Component<{}, { username: string; message: string }> {
   username: string;
   constructor(props: any) {
     super(props);
     this.state = {
       username: "",
+      message: "",
     };
     this.username = "";
     this.HandleSetUsername = this.HandleSetUsername.bind(this);
@@ -22,6 +23,9 @@ class App extends React.Component<{}, { username: string }> {
   }
   componentDidMount() {
     socket.on("userSet", (data: string) => this.setState({ username: data }));
+    socket.on("userExists", (message: string) =>
+      this.setState({ message: message })
+    );
   }
   HandleUpdateUsername(username: string) {
     this.username = username.substring(0, 10);
@@ -36,6 +40,9 @@ class App extends React.Component<{}, { username: string }> {
           <Col>
             <h1 className="page-header">Fives</h1>
           </Col>
+        </Row>
+        <Row>
+          <div>{this.state.message}</div>
         </Row>
         <Row
           id="data-entry"

@@ -1,20 +1,17 @@
-import Card from "../cards/card";
 import Deck from "../cards/deck";
 import Player from "./player";
 import score from "../rules/score";
-import SocketAdaptor from "../socketAdapter";
-import Rule from "../rules/rule";
 
 export default class Players {
   players: Player[];
-  io: SocketAdaptor;
+  updateGameRoom: Function;
   errorHandler: Function;
   currentPos: number;
   numPlayed: number;
 
-  constructor(io: SocketAdaptor, errorHandler: Function) {
+  constructor(updateGameRoom: Function, errorHandler: Function) {
     this.players = [];
-    this.io = io;
+    this.updateGameRoom = updateGameRoom;
     this.errorHandler = errorHandler;
     this.currentPos = 0;
     this.numPlayed = 0;
@@ -28,7 +25,7 @@ export default class Players {
   }
 
   allPlayersHavePlayed() {
-    return this.numPlayed >= this.players.length;
+    return this.numPlayed > this.players.length;
   }
 
   setAllPlayers(modifyCB: Function) {
@@ -36,7 +33,7 @@ export default class Players {
   }
 
   setIterator(startPos: number) {
-    this.currentPos = startPos;
+    this.currentPos = startPos - 1;
   }
   nextPlayer() {
     // get next player
@@ -58,30 +55,28 @@ export default class Players {
     }
     return player;
   }
-  dealCards(deck: Deck, discards: Card[], currentRound: Rule) {
+  dealCards(deck: Deck) {
     this.numPlayed = 0;
-    this.io.updateSockets();
     this.players.forEach((player) => {
       player.setHand(deck.deal(13));
-      this.io.sendSingle(player.socketId, "dealtCards", {
-        cards: player.hand,
-        discards: discards,
-        currentRound: currentRound,
-      });
       // make sure the players details have been reset
+      player.hasGoneDown = false;
+      player.canGoDown = false;
+      player.hasDrawn = false;
       player.setTable([]);
     });
     this.sendPlayers();
-    this.sendCurrentPlayer();
+    return this.sendCurrentPlayer();
   }
 
   sendPlayers() {
-    this.io.updateGameRoom("setPlayers", this.players);
+    this.updateGameRoom("setPlayers", this.players);
   }
 
   sendCurrentPlayer() {
     let currentPlayer = this.nextPlayer();
-    this.io.updateGameRoom("setCurrentPlayer", currentPlayer.username);
+    this.updateGameRoom("setCurrentPlayer", currentPlayer.username);
+    return currentPlayer;
   }
 
   findPlayerByUsername(username: string) {
@@ -103,5 +98,12 @@ export default class Players {
   updateScores() {
     this.players.forEach((player) => player.addScore(score(player.hand)));
     this.sendPlayers();
+  }
+
+  getWinner() {
+    return this.players.reduce(
+      (p1, p2) => (p1.score < p2.score ? p1 : p2),
+      this.players[0]
+    );
   }
 }

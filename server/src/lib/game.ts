@@ -2,10 +2,10 @@ import Deck from "./cards/deck";
 import Player from "./players/player";
 import Players from "./players/players";
 import Card from "./cards/card";
-import { Socket } from "socket.io";
-import SocketAdaptor from "./socketAdapter";
+import TestSocket from "./test/testSocket";
 import Rule from "./rules/rule";
 import Rules from "./rules/rules";
+import { Server, Socket } from "socket.io";
 
 const TIME_TO_SHUFFLE = 10_000;
 
@@ -15,40 +15,42 @@ export default class Game {
   discards: Card[];
   currentRound: Rule;
   rules: Rules;
-  io: SocketAdaptor;
+  io: Server;
   currentPlayer: Player;
   gameStarted: boolean;
   allPlayersHavePlayed: boolean;
+  updateGameRoom: Function;
 
-  constructor(io: SocketAdaptor) {
-    this.players = new Players(io, this.error);
+  constructor(updateGameRoom: Function) {
+    this.players = new Players(updateGameRoom, this.error.bind(this));
     this.rules = new Rules();
     this.currentRound = this.rules.next();
-    this.io = io;
+    this.updateGameRoom = updateGameRoom;
     this.gameStarted = false;
     this.allPlayersHavePlayed = false;
   }
 
-  addPlayer(username: string, socket: Socket, gameRoom: string) {
+  addPlayer(username: string, socket: Socket | TestSocket, gameRoom: string) {
     let existingPlayer = this.players.findPlayerByUsername(username);
     if (existingPlayer) {
-      if (this.gameStarted) {
-        existingPlayer.setSocket(socket.id);
-      } else {
+      if (existingPlayer.isValid()) {
         socket.emit(
           "userExists",
           username + " username is taken! Try some other username."
         );
         return;
+      } else {
+        existingPlayer.setSocket(socket.id);
+        if (this.currentPlayer) {
+          this.updateGameRoom("setCurrentPlayer", this.currentPlayer.username);
+        }
       }
     } else {
       if (this.gameStarted) return;
       existingPlayer = new Player(socket.id, username);
       this.players.addPlayer(existingPlayer);
     }
-    // TODO: consolidate userSet and setUserData
     socket.emit("userSet", existingPlayer.username);
-    socket.emit("setUserData", existingPlayer);
     socket.join(gameRoom);
     this.players.sendPlayers();
   }
@@ -67,58 +69,95 @@ export default class Game {
     this.deck = new Deck(2);
     this.deck.shuffle();
     this.discards = this.deck.deal(1);
-    this.players.setAllPlayers((player: Player) => {
-      player.hasGoneDown = false;
-      player.canGoDown = false;
-    });
     this.players.setIterator(this.rules.currentRule);
-    this.players.dealCards(this.deck, this.discards, this.currentRound);
+    this.currentPlayer = this.players.dealCards(this.deck);
+    this.updateGameRoom("setCurrentRound", this.currentRound);
+    this.updateGameRoom("setDiscards", this.discards);
     this.sendMessage("waiting for player to pick up");
     this.allPlayersHavePlayed = false;
   }
 
-  dealCard() {
-    return this.deck.deal(1);
+  drawFromDeck() {
+    if (this.currentPlayer.hasDrawn) {
+      return;
+    }
+    this.draw(this.deck.deal(1)[0]);
+  }
+
+  drawFromDiscard() {
+    if (this.currentPlayer.hasDrawn) {
+      return;
+    }
+    this.draw(this.discards.pop());
+    this.updateGameRoom("setDiscards", this.discards);
+  }
+
+  draw(card: Card) {
+    this.currentPlayer.hasDrawn = true;
+    this.currentPlayer.hand.push(card);
+    this.setHand(this.currentPlayer.hand);
   }
 
   setTable(username: string, table: Card[][]) {
-    const player = this.players.findPlayerByUsername(username);
+    const player = this.findPlayerByUsername(username);
     player.setTable(table);
     this.players.sendPlayers();
   }
 
-  setHand(username: string, hand: Card[]) {
+  setHand(hand: Card[]) {
+    this.currentPlayer.setHand(hand);
+    this.players.sendPlayers();
+  }
+
+  findPlayerByUsername(username: string) {
     const player = this.players.findPlayerByUsername(username);
     if (player) {
-      player.setHand(hand);
-    } else {
-      this.error("Unable to find user: " + username);
+      return player;
     }
+    this.error("Unable to find user: " + username);
   }
 
-  setDiscards(discards: Card[]) {
-    this.discards = discards;
-    this.io.updateGameRoom("setDiscards", discards);
+  isCurrentPlayer(socketId: string) {
+    return this.currentPlayer.socketId === socketId;
   }
 
-  sendMessage(message: string) {
-    this.io.updateGameRoom("setMessage", message);
+  discard(discard: Card, hand: Card[]) {
+    this.discards.push(discard);
+    this.setHand(hand);
+    this.currentPlayer.endTurn();
+    this.updateGameRoom("setDiscards", this.discards);
+    if (hand.length > 0) {
+      return this.nextPlayer();
+    }
+    this.finishRound();
   }
 
   finishRound() {
+    this.sendMessage(this.currentPlayer.username + " has chipped!");
     this.players.updateScores();
     if (this.rules.hasNext()) {
-      setTimeout(this.dealRound, TIME_TO_SHUFFLE);
+      this.currentRound = this.rules.next();
+      setTimeout(() => this.dealRound(), TIME_TO_SHUFFLE);
+    } else {
+      const winner = this.players.getWinner();
+      setTimeout(
+        () => this.sendMessage(winner.username + " is the winner!"),
+        TIME_TO_SHUFFLE
+      );
     }
   }
 
   nextPlayer() {
-    this.players.sendCurrentPlayer();
+    this.currentPlayer = this.players.sendCurrentPlayer();
     this.sendMessage("waiting for player to pick up");
     if (!this.allPlayersHavePlayed && this.players.allPlayersHavePlayed()) {
       this.allPlayersHavePlayed = true;
       this.players.setAllPlayers((player: Player) => (player.canGoDown = true));
     }
+  }
+
+  sendMessage(message: string) {
+    this.updateGameRoom("setMessage", message);
   }
 
   disconnectPlayer(socketId: string) {

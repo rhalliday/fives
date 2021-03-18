@@ -17,7 +17,7 @@ export default class Rules {
   }
 
   hasNext() {
-    return this.currentRule + 1 < this.rules.length;
+    return this.currentRule + 1 <= this.rules.length;
   }
 
   next() {

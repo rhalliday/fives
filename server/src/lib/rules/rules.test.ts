@@ -16,7 +16,9 @@ test("the rules are the correct rules", () => {
     new Rule(2, 5, "Two Five's"),
   ];
   const rules = new Rules();
-  expect(rules.hasNext()).toBeTruthy();
-  expectedRules.forEach((r) => expect(rules.next()).toEqual(r));
+  expectedRules.forEach((r) => {
+    expect(rules.hasNext()).toBeTruthy();
+    expect(rules.next()).toEqual(r);
+  });
   expect(rules.hasNext()).toBeFalsy();
 });

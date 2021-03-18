@@ -2,8 +2,8 @@ export const ItemTypes = {
   CARD: "card",
 };
 
-const server = process.env["SERVER_HOST"] || "localhost";
-const port = process.env["SERVER_PORT"] || "8080";
+const server = "localhost";
+const port = "8080";
 
 export const ENDPOINT = "http://" + server + ":" + port;
 
