@@ -28,5 +28,3 @@ The winner is the person with the lowest score.
 1. Handle what happens when the game is finished. - Setting the title, not dealing anymore cards, still showing the score
 2. Implement the "rooms" concept so that you can have multiple games going on at once
 3. Refactor PlayGame as it's massive
-
-setUserData
