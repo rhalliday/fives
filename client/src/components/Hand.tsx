@@ -1,16 +1,16 @@
 import React from "react";
 import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-//import { TouchBackend } from "react-dnd-touch-backend";
+//import { HTML5Backend } from "react-dnd-html5-backend";
+import { TouchBackend } from "react-dnd-touch-backend";
 import ListGroup from "react-bootstrap/ListGroup";
 import DragableCard from "./DragableCard";
 import { Card } from "../types/Card";
 
 type handProps = {
-  cards: Card[],
-  handleClickedCard: Function,
-  handleMoveCard: Function,
-}
+  cards: Card[];
+  handleClickedCard: Function;
+  handleMoveCard: Function;
+};
 
 function Hand(props: handProps) {
   let displayCards = props.cards.map((card, index) => {
@@ -30,8 +30,8 @@ function Hand(props: handProps) {
     );
   });
   return (
-    //<DndProvider backend={TouchBackend}>
-    <DndProvider backend={HTML5Backend}>
+    //<DndProvider backend={HTML5Backend}>
+    <DndProvider backend={TouchBackend}>
       <ListGroup horizontal style={{ marginTop: "2em" }}>
         {displayCards}
       </ListGroup>

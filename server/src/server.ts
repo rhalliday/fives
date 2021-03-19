@@ -3,10 +3,19 @@ import { Server, Socket } from "socket.io";
 import Card from "./lib/cards/card";
 import * as origin from "./config/origin.json";
 import Game from "./lib/game";
+import { Server as StaticServer } from "node-static";
 
-const http = createServer();
+const fileServer = new StaticServer("./client");
+
+const http = createServer((req, resp) => {
+  req
+    .addListener("end", function () {
+      fileServer.serve(req, resp);
+    })
+    .resume();
+});
+
 const server = "http://" + origin.server + ":" + origin.port;
-console.log(server);
 const io = new Server(http, {
   cors: {
     origin: server,
