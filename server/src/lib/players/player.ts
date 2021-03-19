@@ -1,4 +1,4 @@
-import Card from "./card";
+import Card from "../cards/card";
 
 export default class Player {
   socketId: string;
@@ -6,6 +6,10 @@ export default class Player {
   table: Card[][];
   hand: Card[];
   score: number;
+  canStartGame: boolean;
+  canGoDown: boolean;
+  hasGoneDown: boolean;
+  hasDrawn: boolean;
 
   constructor(socketId: string, username: string) {
     this.socketId = socketId;
@@ -13,14 +17,22 @@ export default class Player {
     this.table = [];
     this.hand = [];
     this.score = 0;
+    this.canStartGame = false;
+    this.canGoDown = false;
+    this.hasGoneDown = false;
+    this.hasDrawn = false;
   }
 
   clearSocket() {
-    this.setSocket("");
+    this.socketId = "";
   }
 
   setSocket(socketId: string) {
     this.socketId = socketId;
+  }
+
+  hasSocket() {
+    return this.socketId !== "";
   }
 
   setTable(table: Card[][]) {
@@ -36,11 +48,13 @@ export default class Player {
   }
 
   isValid() {
-    return (
-      this.socketId &&
-      this.socketId.length > 0 &&
-      this.username &&
-      this.username.length > 0
-    );
+    return this.socketId && this.username && this.username.length > 0;
+  }
+
+  endTurn() {
+    this.hasDrawn = false;
+    if (this.table.length > 0) {
+      this.hasGoneDown = true;
+    }
   }
 }

@@ -1,5 +1,5 @@
 import Player from "./player";
-import Card from "./card";
+import Card from "../cards/card";
 
 let player: Player;
 
@@ -9,7 +9,7 @@ beforeEach(() => {
 
 test("can clear socket", () => {
   player.clearSocket();
-  expect(player.socketId).toBe("");
+  expect(player.socketId).toEqual("");
 });
 
 test("can set socket", () => {
@@ -62,6 +62,22 @@ test("player validity", () => {
   expect(player.isValid()).toBeFalsy();
   player.username = "fred";
   expect(player.isValid()).toBeTruthy();
+});
+
+describe("ending a players turn", () => {
+  test("ending a turn with an empty table", () => {
+    player.hasDrawn = true;
+    player.endTurn();
+    expect(player.hasDrawn).toBeFalsy();
+    expect(player.hasGoneDown).toBeFalsy();
+  });
+  test("ending a turn with a populated table", () => {
+    player.hasDrawn = true;
+    player.setTable([[new Card("A", "S")]]);
+    player.endTurn();
+    expect(player.hasDrawn).toBeFalsy();
+    expect(player.hasGoneDown).toBeTruthy();
+  });
 });
 
 function generateCardGroup(cards: string[][]): Card[] {
