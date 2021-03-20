@@ -104,9 +104,16 @@ export default class Game {
     this.players.sendPlayers();
   }
 
+  // set the hand and trigger an emit
   setHand(hand: Card[]) {
     this.currentPlayer.setHand(hand);
     this.players.sendPlayers();
+  }
+
+  // method that updates the hand but doesn't trigger an emit
+  updateHand(username: string, hand: Card[]) {
+    const player = this.findPlayerByUsername(username);
+    player.setHand(hand);
   }
 
   findPlayerByUsername(username: string) {

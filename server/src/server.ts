@@ -50,7 +50,9 @@ io.on("connection", function (socket: Socket) {
   socket.on("setTable", (data: { username: string; table: Card[][] }) => {
     playerCheck(() => game.setTable(data.username, data.table));
   });
-  socket.on("setHand", (hand: Card[]) => playerCheck(() => game.setHand(hand)));
+  socket.on("setHand", (data: { username: string; hand: Card[] }) =>
+    game.updateHand(data.username, data.hand)
+  );
   socket.on("setDiscard", (data: { discard: Card; hand: Card[] }) => {
     playerCheck(() => game.discard(data.discard, data.hand));
   });
