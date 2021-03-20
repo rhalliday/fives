@@ -1,7 +1,8 @@
 import React from "react";
 import { DndProvider } from "react-dnd";
-//import { HTML5Backend } from "react-dnd-html5-backend";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import { TouchBackend } from "react-dnd-touch-backend";
+import { useMediaQuery } from "react-responsive";
 import ListGroup from "react-bootstrap/ListGroup";
 import DragableCard from "./DragableCard";
 import { Card } from "../types/Card";
@@ -29,9 +30,11 @@ function Hand(props: handProps) {
       </ListGroup.Item>
     );
   });
+  const isTabletOrMobile = useMediaQuery({
+    maxWidth: 991,
+  });
   return (
-    //<DndProvider backend={HTML5Backend}>
-    <DndProvider backend={TouchBackend}>
+    <DndProvider backend={isTabletOrMobile ? TouchBackend : HTML5Backend}>
       <ListGroup horizontal style={{ marginTop: "2em" }}>
         {displayCards}
       </ListGroup>
