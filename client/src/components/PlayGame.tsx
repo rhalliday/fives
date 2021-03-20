@@ -108,16 +108,18 @@ class PlayGame extends React.Component<gameProps, gameState> {
     const dragCard = me.hand.splice(dragIndex, 1);
     me.hand.splice(hoverIndex, 0, dragCard[0]);
     this.setState({ me: me });
+    socket.emit("setHand", {
+      username: this.props.username,
+      hand: this.state.me.hand,
+    });
   }
   HandleDeckClick() {
     if (!this.canClickCard()) return;
-    socket.emit("setHand", this.state.me.hand);
     socket.emit("getDeckCard");
     this.sendMessage("card selected from deck");
   }
   HandleDiscardClick() {
     if (!this.canClickCard()) return;
-    socket.emit("setHand", this.state.me.hand);
     socket.emit("getDiscardCard");
     this.sendMessage("card selected from discard");
   }
@@ -157,7 +159,7 @@ class PlayGame extends React.Component<gameProps, gameState> {
   }
   sendTable(table: Card[][], hand: Card[], username?: string) {
     username = username || this.props.username;
-    socket.emit("setHand", hand);
+    socket.emit("setHand", { username: this.props.username, hand: hand });
     socket.emit("setTable", {
       username: username,
       table: table,
