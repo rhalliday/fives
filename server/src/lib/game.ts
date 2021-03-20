@@ -147,10 +147,10 @@ export default class Game {
       setTimeout(() => this.dealRound(), TIME_TO_SHUFFLE);
     } else {
       const winner = this.players.getWinner();
-      setTimeout(
-        () => this.sendMessage(winner.username + " is the winner!"),
-        TIME_TO_SHUFFLE
-      );
+      setTimeout(() => {
+        this.sendMessage(winner.username + " is the winner!");
+        this.updateGameRoom("gameOver");
+      }, TIME_TO_SHUFFLE);
     }
   }
 

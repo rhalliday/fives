@@ -1,4 +1,5 @@
 import React from "react";
+import Confetti from "react-confetti";
 
 import "./App.css";
 import DataEntry from "./components/DataEntry";
@@ -9,23 +10,30 @@ import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { socket } from "./service/socket";
 
-class App extends React.Component<{}, { username: string; message: string }> {
+class App extends React.Component<
+  {},
+  { username: string; message: string; finished: boolean }
+> {
   username: string;
   constructor(props: any) {
     super(props);
     this.state = {
       username: "",
       message: "",
+      finished: false,
     };
     this.username = "";
     this.HandleSetUsername = this.HandleSetUsername.bind(this);
     this.HandleUpdateUsername = this.HandleUpdateUsername.bind(this);
   }
   componentDidMount() {
-    socket.on("userSet", (data: string) => this.setState({ username: data }));
+    socket.on("userSet", (data: string) =>
+      this.setState({ username: data, message: "" })
+    );
     socket.on("userExists", (message: string) =>
       this.setState({ message: message })
     );
+    socket.on("gameOver", () => this.setState({ finished: true }));
   }
   HandleUpdateUsername(username: string) {
     this.username = username.substring(0, 10);
@@ -36,6 +44,9 @@ class App extends React.Component<{}, { username: string; message: string }> {
   render() {
     return (
       <Container>
+        {this.state.finished && (
+          <Confetti width={window.innerWidth} height={window.innerHeight} />
+        )}
         <Row>
           <Col>
             <h1 className="page-header">Fives</h1>

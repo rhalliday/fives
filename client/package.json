@@ -15,10 +15,12 @@
     "immutability-helper": "^3.1.1",
     "react": "^17.0.1",
     "react-bootstrap": "^1.4.3",
+    "react-confetti": "^6.0.1",
     "react-dnd": "^11.1.3",
     "react-dnd-html5-backend": "^11.1.3",
     "react-dnd-touch-backend": "^11.1.3",
     "react-dom": "^17.0.1",
+    "react-responsive": "^8.2.0",
     "react-scripts": "^4.0.1",
     "socket.io-client": "^3.1.0",
     "typescript": "^4.2.2",
@@ -49,6 +51,7 @@
     ]
   },
   "devDependencies": {
+    "@types/react-responsive": "^8.0.2",
     "file-loader": "^6.1.1"
   }
 }
