@@ -2,6 +2,7 @@
 import React from "react";
 import Enzyme, { shallow } from "enzyme";
 import Adapter from "enzyme-adapter-react-16";
+import { generateCards } from "../service/testUtils";
 
 /* Components */
 import Table from "./Table";
@@ -72,11 +73,3 @@ describe("Table", () => {
     expect(clicked).toBeTruthy();
   });
 });
-
-function generateCards(cardArray) {
-  return cardArray.map((card) => generateCard(card[0], card[1]));
-}
-
-function generateCard(rank, suit) {
-  return { rank: rank, suit: suit, selected: false };
-}

@@ -2,6 +2,7 @@
 import React from "react";
 import Enzyme, { shallow } from "enzyme";
 import Adapter from "enzyme-adapter-react-16";
+import { generateCard } from "../service/testUtils";
 
 /* Components */
 import Card from "./Card";
@@ -34,7 +35,3 @@ describe("Card", () => {
     expect(clicked).toBeTruthy();
   });
 });
-
-function generateCard(rank, suit) {
-  return { rank: rank, suit: suit, selected: false };
-}
