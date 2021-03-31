@@ -173,9 +173,13 @@ class PlayGame extends React.Component<gameProps, gameState> {
     this.setState({ me: me });
     this.sendTable(currentTable, cards);
   }
+  canAddToGroup() {
+    return this.playersTurnHasStarted() && this.state.me.hand.length > 1;
+  }
   HandleAddToTableGroup(groupIndex: number) {
-    if (this.state.me.hand.length < 2) return;
+    if (!this.canAddToGroup()) return;
     let cardGroup = this.selectedCards();
+    if (cardGroup.length === 0) return;
     let table = this.state.me.table;
     let selectedGroup = table[groupIndex];
     let newTableGroup = this.addToGroup(cardGroup, selectedGroup);
@@ -186,8 +190,9 @@ class PlayGame extends React.Component<gameProps, gameState> {
     }
   }
   HandleAddToOtherTable(groupIndex: number, otherPlayer: Player) {
-    if (this.state.me.hand.length < 2) return;
+    if (!this.canAddToGroup()) return;
     let cardGroup = this.selectedCards();
+    if (cardGroup.length === 0) return;
     let table = otherPlayer.table;
     let selectedGroup = table[groupIndex];
     let newTableGroup = this.addToGroup(cardGroup, selectedGroup);
@@ -202,7 +207,7 @@ class PlayGame extends React.Component<gameProps, gameState> {
   }
   addToGroup(cardGroup: Card[], selectedGroup: Card[]) {
     // if we havn't gone down yet, we can't lay cards
-    if (!this.state.me.hasGoneDown) {
+    if (!this.canAddToGroup() || !this.state.me.hasGoneDown) {
       return [];
     }
     // check to see if adding the cards to the front of the group is valid
@@ -222,21 +227,21 @@ class PlayGame extends React.Component<gameProps, gameState> {
   selectedCards() {
     return this.state.me.hand.filter((card) => card.selected);
   }
-  buttonsEnabled() {
+  playersTurnHasStarted() {
     return (
       this.state.currentPlayer === this.props.username && this.state.me.hasDrawn
     );
   }
   discardButtonDisabled() {
     return !(
-      this.buttonsEnabled() &&
+      this.playersTurnHasStarted() &&
       this.selectedCards().length === 1 &&
       this.hasValidTable()
     );
   }
   layButtonDisabled() {
     return !(
-      this.buttonsEnabled() &&
+      this.playersTurnHasStarted() &&
       this.state.me.canGoDown &&
       this.state.me.hand.length > 3 &&
       this.hasValidGroup()

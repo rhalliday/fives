@@ -57,5 +57,12 @@
   },
   "devDependencies": {
     "file-loader": "^6.1.1"
+  },
+  "jest": {
+    "coveragePathIgnorePatterns": [
+      "src/reportWebVitals.ts",
+      "src/index.tsx",
+      "src/types"
+    ]
   }
 }
