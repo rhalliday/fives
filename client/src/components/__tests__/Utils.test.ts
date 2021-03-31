@@ -1,6 +1,6 @@
-import { getImageLocation, getCardImageName } from "./Utils";
+import { getImageLocation, getCardImageName } from "../Utils";
 
-import { Card } from "../types/Card";
+import { Card } from "../../types/Card";
 
 describe("getImageLocation tests", () => {
   it("should return an image location given a card string", () => {

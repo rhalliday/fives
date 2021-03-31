@@ -6,13 +6,13 @@ import {
   generatePlayer,
   generateCards,
   generateCard,
-} from "../service/testUtils";
-import { socket } from "../service/socket";
+} from "../../service/testUtils";
+import { socket } from "../../service/socket";
 
 /* Components */
-import PlayGame from "./PlayGame";
+import PlayGame from "../PlayGame";
 
-jest.mock("../service/socket");
+jest.mock("../../service/socket");
 
 // Configure enzyme for react 16
 Enzyme.configure({ adapter: new Adapter() });

@@ -2,10 +2,10 @@
 import React from "react";
 import Enzyme, { shallow } from "enzyme";
 import Adapter from "enzyme-adapter-react-16";
-import { generateCard } from "../service/testUtils";
+import { generateCard } from "../../service/testUtils";
 
 /* Components */
-import Card from "./Card";
+import Card from "../Card";
 
 // Configure enzyme for react 16
 Enzyme.configure({ adapter: new Adapter() });

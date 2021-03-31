@@ -2,10 +2,10 @@
 import React from "react";
 import Enzyme, { shallow } from "enzyme";
 import Adapter from "enzyme-adapter-react-16";
-import { generatePlayer } from "../service/testUtils";
+import { generatePlayer } from "../../service/testUtils";
 
 /* Components */
-import Players from "./Players";
+import Players from "../Players";
 
 // Configure enzyme for react 16
 Enzyme.configure({ adapter: new Adapter() });
