@@ -1,199 +1,186 @@
-import { isBlackTwo, sameRank, isStraight, validator, score } from "./fives";
+import { isBlackTwo, sameRank, isStraight, validator } from "./fives";
 
-test("isBlackTwo identifies the 2 of clubs", () => {
-  expect(isBlackTwo({ rank: "2", suit: "C" })).toBe(true);
+describe("isBlackTwo", () => {
+  it("identifies the 2 of clubs", () => {
+    expect(isBlackTwo({ rank: "2", suit: "C" })).toBeTruthy();
+  });
+
+  it("identifies the 2 of spades", () => {
+    expect(isBlackTwo({ rank: "2", suit: "S" })).toBeTruthy();
+  });
+
+  it("false for the 2 of hearts", () => {
+    expect(isBlackTwo({ rank: "2", suit: "H" })).toBeFalsy();
+  });
+
+  it("false for the 2 of diamonds", () => {
+    expect(isBlackTwo({ rank: "2", suit: "D" })).toBeFalsy();
+  });
+
+  it("false for the 3 of clubs", () => {
+    expect(isBlackTwo({ rank: "3", suit: "C" })).toBeFalsy();
+  });
 });
 
-test("isBlackTwo identifies the 2 of spades", () => {
-  expect(isBlackTwo({ rank: "2", suit: "S" })).toBe(true);
+describe("sameRank", () => {
+  it("should return true if they're all the same rank", () => {
+    let cards = [
+      { rank: "3", suit: "H" },
+      { rank: "3", suit: "D" },
+      { rank: "3", suit: "C" },
+    ];
+    expect(sameRank(cards)).toBeTruthy();
+  });
+
+  it("should return false if they're not all the same rank", () => {
+    let cards = [
+      { rank: "3", suit: "H" },
+      { rank: "3", suit: "D" },
+      { rank: "4", suit: "C" },
+    ];
+    expect(sameRank(cards)).toBeFalsy();
+  });
+
+  it("should take into account black 2's", () => {
+    let cards = [
+      { rank: "3", suit: "H" },
+      { rank: "3", suit: "D" },
+      { rank: "2", suit: "C" },
+    ];
+    expect(sameRank(cards)).toBeTruthy();
+  });
+
+  it("should return false if there are no cards", () => {
+    expect(sameRank([])).toBeFalsy();
+  });
 });
 
-test("isBlackTwo false for the 2 of hearts", () => {
-  expect(isBlackTwo({ rank: "2", suit: "H" })).toBe(false);
+describe("isStraight", () => {
+  it("returns true if it is a straight", () => {
+    let cards = [
+      { rank: "3", suit: "H" },
+      { rank: "4", suit: "H" },
+      { rank: "5", suit: "H" },
+    ];
+    expect(isStraight(cards)).toBeTruthy();
+  });
+
+  it("returns true aces low", () => {
+    let cards = [
+      { rank: "A", suit: "H" },
+      { rank: "2", suit: "H" },
+      { rank: "3", suit: "H" },
+    ];
+    expect(isStraight(cards)).toBeTruthy();
+  });
+
+  it("returns true aces high", () => {
+    let cards = [
+      { rank: "10", suit: "H" },
+      { rank: "J", suit: "H" },
+      { rank: "Q", suit: "H" },
+      { rank: "K", suit: "H" },
+      { rank: "A", suit: "H" },
+    ];
+    expect(isStraight(cards)).toBeTruthy();
+  });
+
+  it("returns true with black 2", () => {
+    let cards = [
+      { rank: "10", suit: "H" },
+      { rank: "J", suit: "H" },
+      { rank: "2", suit: "C" },
+      { rank: "K", suit: "H" },
+      { rank: "A", suit: "H" },
+    ];
+    expect(isStraight(cards)).toBeTruthy();
+  });
+
+  it("returns false if not run", () => {
+    let cards = [
+      { rank: "10", suit: "H" },
+      { rank: "J", suit: "H" },
+      { rank: "2", suit: "H" },
+      { rank: "K", suit: "H" },
+      { rank: "A", suit: "H" },
+    ];
+    expect(isStraight(cards)).toBeFalsy();
+  });
+
+  it("returns false when no cards are passed in", () => {
+    expect(isStraight([])).toBeFalsy();
+  });
 });
 
-test("isBlackTwo false for the 2 of diamonds", () => {
-  expect(isBlackTwo({ rank: "2", suit: "D" })).toBe(false);
-});
+describe("validator", () => {
+  test("4 of a kind", () => {
+    let cards = [
+      { rank: "3", suit: "H" },
+      { rank: "3", suit: "D" },
+      { rank: "3", suit: "C" },
+      { rank: "3", suit: "C" },
+    ];
+    expect(validator(cards)).toBeTruthy();
+  });
 
-test("isBlackTwo false the 3 of clubs", () => {
-  expect(isBlackTwo({ rank: "3", suit: "C" })).toBe(false);
-});
+  test("4 of a kind - black 2", () => {
+    let cards = [
+      { rank: "2", suit: "S" },
+      { rank: "3", suit: "D" },
+      { rank: "3", suit: "C" },
+      { rank: "3", suit: "C" },
+    ];
+    expect(validator(cards)).toBeTruthy();
+  });
 
-test("sameRank should return true if they're all the same rank", () => {
-  let cards = [
-    { rank: "3", suit: "H" },
-    { rank: "3", suit: "D" },
-    { rank: "3", suit: "C" },
-  ];
-  expect(sameRank(cards)).toBe(true);
-});
+  test("4 of a kind - red 2", () => {
+    let cards = [
+      { rank: "2", suit: "D" },
+      { rank: "3", suit: "D" },
+      { rank: "3", suit: "C" },
+      { rank: "3", suit: "C" },
+    ];
+    expect(validator(cards)).toBeFalsy();
+  });
 
-test("sameRank should return false if they're not all the same rank", () => {
-  let cards = [
-    { rank: "3", suit: "H" },
-    { rank: "3", suit: "D" },
-    { rank: "4", suit: "C" },
-  ];
-  expect(sameRank(cards)).toBe(false);
-});
+  test("straight", () => {
+    let cards = [
+      { rank: "10", suit: "H" },
+      { rank: "J", suit: "H" },
+      { rank: "Q", suit: "H" },
+      { rank: "K", suit: "H" },
+      { rank: "A", suit: "H" },
+    ];
+    expect(validator(cards)).toBeTruthy();
+  });
 
-test("sameRank should take into account black 2's", () => {
-  let cards = [
-    { rank: "3", suit: "H" },
-    { rank: "3", suit: "D" },
-    { rank: "2", suit: "C" },
-  ];
-  expect(sameRank(cards)).toBe(true);
-});
+  test("straight, black 2", () => {
+    let cards = [
+      { rank: "2", suit: "C" },
+      { rank: "J", suit: "H" },
+      { rank: "Q", suit: "H" },
+      { rank: "K", suit: "H" },
+      { rank: "A", suit: "H" },
+    ];
+    expect(validator(cards)).toBeTruthy();
+  });
 
-test("isStraight returns true if it is a straight", () => {
-  let cards = [
-    { rank: "3", suit: "H" },
-    { rank: "4", suit: "H" },
-    { rank: "5", suit: "H" },
-  ];
-  expect(isStraight(cards)).toBe(true);
-});
+  test("straight, red 2", () => {
+    let cards = [
+      { rank: "2", suit: "D" },
+      { rank: "J", suit: "H" },
+      { rank: "Q", suit: "H" },
+      { rank: "K", suit: "H" },
+      { rank: "A", suit: "H" },
+    ];
+    expect(validator(cards)).toBeFalsy();
+  });
 
-test("isStraight returns true aces low", () => {
-  let cards = [
-    { rank: "A", suit: "H" },
-    { rank: "2", suit: "H" },
-    { rank: "3", suit: "H" },
-  ];
-  expect(isStraight(cards)).toBe(true);
-});
-
-test("isStraight returns true aces high", () => {
-  let cards = [
-    { rank: "10", suit: "H" },
-    { rank: "J", suit: "H" },
-    { rank: "Q", suit: "H" },
-    { rank: "K", suit: "H" },
-    { rank: "A", suit: "H" },
-  ];
-  expect(isStraight(cards)).toBe(true);
-});
-
-test("isStraight returns true with black 2", () => {
-  let cards = [
-    { rank: "10", suit: "H" },
-    { rank: "J", suit: "H" },
-    { rank: "2", suit: "C" },
-    { rank: "K", suit: "H" },
-    { rank: "A", suit: "H" },
-  ];
-  expect(isStraight(cards)).toBe(true);
-});
-
-test("isStraight returns false if not run", () => {
-  let cards = [
-    { rank: "10", suit: "H" },
-    { rank: "J", suit: "H" },
-    { rank: "2", suit: "H" },
-    { rank: "K", suit: "H" },
-    { rank: "A", suit: "H" },
-  ];
-  expect(isStraight(cards)).toBe(false);
-});
-
-test("validator 4 of a kind", () => {
-  let cards = [
-    { rank: "3", suit: "H" },
-    { rank: "3", suit: "D" },
-    { rank: "3", suit: "C" },
-    { rank: "3", suit: "C" },
-  ];
-  expect(validator(cards)).toBe(true);
-});
-
-test("validator 4 of a kind - black 2", () => {
-  let cards = [
-    { rank: "2", suit: "S" },
-    { rank: "3", suit: "D" },
-    { rank: "3", suit: "C" },
-    { rank: "3", suit: "C" },
-  ];
-  expect(validator(cards)).toBe(true);
-});
-
-test("validator 4 of a kind - red 2", () => {
-  let cards = [
-    { rank: "2", suit: "D" },
-    { rank: "3", suit: "D" },
-    { rank: "3", suit: "C" },
-    { rank: "3", suit: "C" },
-  ];
-  expect(validator(cards)).toBe(false);
-});
-
-test("validator straight", () => {
-  let cards = [
-    { rank: "10", suit: "H" },
-    { rank: "J", suit: "H" },
-    { rank: "Q", suit: "H" },
-    { rank: "K", suit: "H" },
-    { rank: "A", suit: "H" },
-  ];
-  expect(validator(cards)).toBe(true);
-});
-
-test("validator straight, black 2", () => {
-  let cards = [
-    { rank: "2", suit: "C" },
-    { rank: "J", suit: "H" },
-    { rank: "Q", suit: "H" },
-    { rank: "K", suit: "H" },
-    { rank: "A", suit: "H" },
-  ];
-  expect(validator(cards)).toBe(true);
-});
-
-test("validator straight, red 2", () => {
-  let cards = [
-    { rank: "2", suit: "D" },
-    { rank: "J", suit: "H" },
-    { rank: "Q", suit: "H" },
-    { rank: "K", suit: "H" },
-    { rank: "A", suit: "H" },
-  ];
-  expect(validator(cards)).toBe(false);
-});
-
-test("score handles face and unit cards", () => {
-  let cards = [
-    { rank: "2", suit: "D" },
-    { rank: "J", suit: "H" },
-    { rank: "Q", suit: "H" },
-    { rank: "K", suit: "H" },
-    { rank: "A", suit: "H" },
-  ];
-  expect(score(cards)).toBe(47);
-});
-
-test("black 2 doubles the score", () => {
-  let cards = [
-    { rank: "2", suit: "S" },
-    { rank: "J", suit: "H" },
-    { rank: "Q", suit: "H" },
-    { rank: "K", suit: "H" },
-    { rank: "A", suit: "H" },
-  ];
-  expect(score(cards)).toBe(90);
-});
-
-test("2 black 2 quadruples the score", () => {
-  let cards = [
-    { rank: "2", suit: "S" },
-    { rank: "J", suit: "H" },
-    { rank: "Q", suit: "H" },
-    { rank: "K", suit: "H" },
-    { rank: "2", suit: "C" },
-  ];
-  expect(score(cards)).toBe(120);
-});
-
-test("no cards is a score of 0", () => {
-  expect(score([])).toBe(0);
+  it("should return false if there's less than 3 cards", () => {
+    let cards = [
+      { rank: "2", suit: "C" },
+      { rank: "2", suit: "S" },
+    ];
+    expect(validator(cards)).toBeFalsy();
+  });
 });

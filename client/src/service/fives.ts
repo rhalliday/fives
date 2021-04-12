@@ -1,13 +1,16 @@
 import { Card } from "../types/Card";
 
-function cardValue(card: Card, cardValues: { A: number, J: number, Q: number, K: number }) {
+function cardValue(
+  card: Card,
+  cardValues: { A: number; J: number; Q: number; K: number }
+) {
   if (card.rank in cardValues) {
     return cardValues[card.rank as keyof typeof cardValues];
   }
   return parseInt(card.rank, 10);
 }
 
-function getOrder(card: Card, acesHigh:boolean = true) {
+function getOrder(card: Card, acesHigh: boolean = true) {
   let cardValues = {
     A: acesHigh ? 14 : 1,
     J: 11,
@@ -64,29 +67,6 @@ export function validator(cardsOriginal: Card[]) {
   if (sameRank([...cards])) return true;
 
   return isStraight(cards);
-}
-
-function getValue(card: Card) {
-  let cardValues = {
-    A: 15,
-    J: 10,
-    Q: 10,
-    K: 10,
-  };
-  return cardValue(card, cardValues);
-}
-
-export function score(cards: Card[]) {
-  let score = 0,
-    multipliers = 0;
-  cards.forEach((card) => {
-    if (isBlackTwo(card)) {
-      multipliers = multipliers + 1;
-    } else {
-      score = score + getValue(card);
-    }
-  });
-  return score * 2 ** multipliers;
 }
 
 export default validator;

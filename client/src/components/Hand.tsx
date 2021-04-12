@@ -15,6 +15,7 @@ type handProps = {
 
 function Hand(props: handProps) {
   let displayCards = props.cards.map((card, index) => {
+    /* istanbul ignore next */
     let clickedCard = () => props.handleClickedCard(index);
     return (
       <ListGroup.Item
@@ -33,6 +34,7 @@ function Hand(props: handProps) {
   const isTabletOrMobile = useMediaQuery({
     maxWidth: 991,
   });
+  /* istanbul ignore next */
   return (
     <DndProvider backend={isTabletOrMobile ? TouchBackend : HTML5Backend}>
       <ListGroup horizontal style={{ marginTop: "2em" }}>

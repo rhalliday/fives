@@ -11,6 +11,7 @@ type pdProps = {
 
 function PlayerDisplay(props: pdProps) {
   let player = props.player;
+  /* istanbul ignore next */
   let clickHandler = (groupIndex: number) =>
     props.handleAddToGroup(groupIndex, player);
   return (

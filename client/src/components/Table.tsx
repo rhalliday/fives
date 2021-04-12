@@ -14,7 +14,8 @@ type tableProps = {
 };
 
 function Table(props: tableProps) {
-  let className = "Card-parent " + props.className;
+  let className =
+    "Card-parent" + (props.className ? " " + props.className : "");
   let displayCards = (cards: CardT[], groupIndex: number) => {
     return cards.map((card, index) => {
       return (
