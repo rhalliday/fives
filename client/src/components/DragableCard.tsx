@@ -73,6 +73,7 @@ function DragableCard(props: dcProps) {
       }}
       className="Card-parent"
       onClick={props.clickCard}
+      data-testid={`draggable-card-${index}`}
     >
       <Card card={props.card} />
     </div>
