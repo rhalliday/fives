@@ -52,8 +52,10 @@ describe("individual tests", () => {
       game.gameStarted = true;
       game.addPlayer("bob", playerSocket, "game");
       expect(game.players.players.length).toEqual(1);
-      expect(playerSocket.socketMessages.length).toEqual(1);
+      expect(playerSocket.socketMessages.length).toEqual(2);
       let playerEmit = playerSocket.socketMessages.shift();
+      expect(playerEmit.nsp).toEqual("setCurrentRound");
+      playerEmit = playerSocket.socketMessages.shift();
       expect(playerEmit.nsp).toEqual("userSet");
     });
     test("new player can't override existing player", () => {

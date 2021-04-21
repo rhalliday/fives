@@ -41,9 +41,9 @@ export default class Game {
         return;
       } else {
         existingPlayer.setSocket(socket.id);
-        if (this.currentPlayer) {
+        this.currentPlayer &&
           this.updateGameRoom("setCurrentPlayer", this.currentPlayer.username);
-        }
+        this.gameStarted && socket.emit("setCurrentRound", this.currentRound);
       }
     } else {
       if (this.gameStarted) return;
